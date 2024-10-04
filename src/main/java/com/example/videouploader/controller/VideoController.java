@@ -1,6 +1,9 @@
 package com.example.videouploader.controller;
 
 
+import com.example.videouploader.Exception.VideoException;
+import com.example.videouploader.model.VideoDetails;
+import com.example.videouploader.model.VideoProperties;
 import com.example.videouploader.model.VideoUploadResponse;
 import com.example.videouploader.service.VideoProcessingService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,5 +30,20 @@ public class VideoController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new VideoUploadResponse(null, "Failed to upload video"));
         }
+    }
+
+    @GetMapping("/saveVideo")
+    public ResponseEntity<String> saveVideo() throws VideoException {
+        VideoProperties videoProperties = new VideoProperties(1L, "A", "B", 1.2f);
+
+        return new ResponseEntity<>(videoProcessingService.saveVideoProperties("path", videoProperties), HttpStatus.CREATED);
+
+    }
+
+    @GetMapping("/getVideo/{id}")
+    public ResponseEntity<VideoDetails> GetVideo(@PathVariable Integer id) throws VideoException {
+
+        return new ResponseEntity<>(videoProcessingService.getVideoById(id), HttpStatus.CREATED);
+
     }
 }
