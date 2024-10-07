@@ -20,34 +20,37 @@ public class VideoCombiningServiceImpl implements VideoCombiningService {
             combinedDir.mkdirs();
         }
 
-        File outputFile = new File(COMBINED_VIDEO_DIR, videoId + "_combined.mp4");
+         File outputFile = new File(COMBINED_VIDEO_DIR, videoId + "_combined.mp4");
 
-        String ffmpegCommand = getString(chunks, videoId, outputFile);
+        String ffmpegCommand = getFFmpegCommand(chunks, videoId, outputFile);
 
         ProcessBuilder processBuilder = new ProcessBuilder("cmd.exe", "/c", ffmpegCommand);
         processBuilder.redirectErrorStream(true);
         Process process = processBuilder.start();
-        process.waitFor();
+        int exitCode = process.waitFor();
+
+        if (exitCode != 0) {
+            throw new RuntimeException("FFmpeg command failed with exit code: " + exitCode);
+        }
 
         return outputFile;
     }
 
-    private static String getString(List<File> chunks, String videoId, File outputFile) {
+    private static String getFFmpegCommand(List<File> chunks, String videoId, File outputFile) {
+        // Create the filelist.txt that FFmpeg will use to concatenate chunks
         File fileList = new File(COMBINED_VIDEO_DIR, videoId + "_filelist.txt");
         try (PrintWriter writer = new PrintWriter(fileList)) {
             for (File chunk : chunks) {
                 writer.println("file '" + chunk.getAbsolutePath() + "'");
             }
         } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error creating file list: " + e.getMessage(), e);
         }
 
-
-        String ffmpegCommand = String.format(
-                "ffmpeg -f concat -safe 0 -i %s -c copy %s",
+        return String.format(
+                "ffmpeg -f concat -safe 0 -i \"%s\" -c copy \"%s\"",
                 fileList.getAbsolutePath(),
                 outputFile.getAbsolutePath()
         );
-        return ffmpegCommand;
     }
 }
