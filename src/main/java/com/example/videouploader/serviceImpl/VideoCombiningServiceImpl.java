@@ -13,14 +13,14 @@ import static com.example.videouploader.utility.Constant.COMBINED_VIDEO_DIR;
 @Service
 public class VideoCombiningServiceImpl implements VideoCombiningService {
     @Override
-    public File combineChunks(List<File> chunks, String videoId) throws Exception {
+    public File combineChunks(List<File> chunks, String videoId,String fileName) throws Exception {
 
         File combinedDir = new File(COMBINED_VIDEO_DIR);
         if (!combinedDir.exists()) {
             combinedDir.mkdirs();
         }
 
-         File outputFile = new File(COMBINED_VIDEO_DIR, videoId + "_combined.mp4");
+         File outputFile = new File(COMBINED_VIDEO_DIR, fileName + "_combined.mp4");
 
         String ffmpegCommand = getFFmpegCommand(chunks, videoId, outputFile);
 

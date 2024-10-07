@@ -13,16 +13,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.example.videouploader.utility.Constant.UPLOAD_DIR;
-
+import static com.example.videouploader.utility.Constant.*;
 
 @Service
 public class VideoProcessingServiceImpl implements VideoProcessingService {
-
-
-
 
     @Autowired
     private Executor taskExecutor;
@@ -38,31 +34,46 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
         File tempFile = saveFileToDirectory(file);
         String videoId = UUID.randomUUID().toString();
         List<File> chunks = videoChunkingService.chunkVideo(tempFile, videoId);
-        processChunksAsync(chunks, videoId);
 
+        // Process chunks asynchronously
+        processChunksAsync(chunks, videoId, file.getOriginalFilename(), tempFile);
 
         return videoId;
     }
-    private void processChunksAsync(List<File> chunks, String videoId) {
+
+    // Updated method to process chunks asynchronously
+    private void processChunksAsync(List<File> chunks, String videoId, String fileName, File tempFile) {
         for (File chunk : chunks) {
-            taskExecutor.execute(() -> {
-                processChunk(chunk, videoId);
-            });
+            taskExecutor.execute(() -> processChunk(chunk, videoId));
         }
+
+        AtomicBoolean isCombinedSuccessfully = new AtomicBoolean(false);
 
         taskExecutor.execute(() -> {
             try {
-                File combinedVideo = videoCombiningService.combineChunks(chunks, videoId);
-                System.out.println("Combined video saved at: " + combinedVideo.getAbsolutePath());
+                File combinedVideo = videoCombiningService.combineChunks(chunks, videoId, fileName);
+                isCombinedSuccessfully.set(combinedVideo.exists());
+
+                if (isCombinedSuccessfully.get()) {
+                    System.out.println("Combined video saved at: " + combinedVideo.getAbsolutePath());
+
+                    tempFile.delete();
+                    File chunkDir = new File(CHUNK_DIR, videoId);
+                    deleteFileOrDirectory(chunkDir);
+                    System.out.println("Temporary files and chunk directory deleted.");
+                } else {
+                    System.out.println("Failed to combine video.");
+                }
             } catch (Exception e) {
                 e.printStackTrace();
+                System.out.println("Error occurred during video combination.");
             }
         });
     }
+
     private void processChunk(File chunk, String videoId) {
         try {
-
-            System.err.println("Processing chunk: " + chunk.getName()+"  "+videoId);
+            System.out.println("Processing chunk: " + chunk.getName() + " for video ID: " + videoId);
         } catch (Exception e) {
             System.err.println("Error processing chunk: " + chunk.getName());
             e.printStackTrace();
@@ -70,14 +81,18 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
     }
 
     private File saveFileToDirectory(MultipartFile file) throws IOException {
-
-
         File savedFile = new File(UPLOAD_DIR, Objects.requireNonNull(file.getOriginalFilename()));
         file.transferTo(savedFile);
-
         return savedFile;
     }
 
-
-
+    private void deleteFileOrDirectory(File fileOrDirectory) {
+        if (fileOrDirectory.isDirectory()) {
+            for (File childFile : Objects.requireNonNull(fileOrDirectory.listFiles())) {
+                deleteFileOrDirectory(childFile);
+            }
+        }
+        fileOrDirectory.delete();
+        System.out.println("Deleted: " + fileOrDirectory.getAbsolutePath());
     }
+}

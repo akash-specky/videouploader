@@ -9,5 +9,5 @@ import java.util.List;
 @Service
 public interface VideoCombiningService {
 
-    public File combineChunks(List<File> chunks, String videoId) throws Exception ;
+    public File combineChunks(List<File> chunks, String videoId,String fileName) throws Exception ;
 }
