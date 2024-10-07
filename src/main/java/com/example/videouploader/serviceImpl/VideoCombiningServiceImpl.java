@@ -32,12 +32,16 @@ public class VideoCombiningServiceImpl implements VideoCombiningService {
         if (exitCode != 0) {
             throw new RuntimeException("FFmpeg command failed with exit code: " + exitCode);
         }
+        File fileList = new File(COMBINED_VIDEO_DIR, videoId + "_filelist.txt");
+        if (fileList.exists()) {
+            fileList.delete();
+        }
 
         return outputFile;
     }
 
     private static String getFFmpegCommand(List<File> chunks, String videoId, File outputFile) {
-        // Create the filelist.txt that FFmpeg will use to concatenate chunks
+
         File fileList = new File(COMBINED_VIDEO_DIR, videoId + "_filelist.txt");
         try (PrintWriter writer = new PrintWriter(fileList)) {
             for (File chunk : chunks) {
