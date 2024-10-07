@@ -62,7 +62,7 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
     private void processChunk(File chunk, String videoId) {
         try {
 
-            System.out.println("Processing chunk: " + chunk.getName()+"  "+videoId);
+            System.err.println("Processing chunk: " + chunk.getName()+"  "+videoId);
         } catch (Exception e) {
             System.err.println("Error processing chunk: " + chunk.getName());
             e.printStackTrace();

@@ -14,6 +14,12 @@ import static com.example.videouploader.utility.Constant.COMBINED_VIDEO_DIR;
 public class VideoCombiningServiceImpl implements VideoCombiningService {
     @Override
     public File combineChunks(List<File> chunks, String videoId) throws Exception {
+
+        File combinedDir = new File(COMBINED_VIDEO_DIR);
+        if (!combinedDir.exists()) {
+            combinedDir.mkdirs();
+        }
+
         File outputFile = new File(COMBINED_VIDEO_DIR, videoId + "_combined.mp4");
 
         String ffmpegCommand = getString(chunks, videoId, outputFile);
