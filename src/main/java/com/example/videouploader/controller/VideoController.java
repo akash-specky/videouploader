@@ -19,9 +19,11 @@ public class VideoController {
 
 
     @PostMapping("/upload")
-    public ResponseEntity<VideoUploadResponse> uploadVideo(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<VideoUploadResponse> uploadVideo(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "resolution", defaultValue = "720p") String resolution){
         try {
-            String videoId = videoProcessingService.processUploadedVideo(file);
+            String videoId = videoProcessingService.processUploadedVideo(file,resolution);
             return ResponseEntity.ok(new VideoUploadResponse(videoId, "Video uploaded successfully!"));
         } catch (Exception e) {
             e.printStackTrace();
