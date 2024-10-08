@@ -36,7 +36,7 @@ public class VideoChunkingServiceImpl implements VideoChunkingService {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println(line); // Log FFmpeg output for debugging
+                System.out.println(line);
             }
         }
 

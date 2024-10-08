@@ -35,13 +35,11 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
         String videoId = UUID.randomUUID().toString();
         List<File> chunks = videoChunkingService.chunkVideo(tempFile, videoId);
 
-        // Process chunks asynchronously
-        processChunksAsync(chunks, videoId, file.getOriginalFilename(), tempFile);
+         processChunksAsync(chunks, videoId, file.getOriginalFilename(), tempFile);
 
         return videoId;
     }
 
-    // Updated method to process chunks asynchronously
     private void processChunksAsync(List<File> chunks, String videoId, String fileName, File tempFile) {
         for (File chunk : chunks) {
             taskExecutor.execute(() -> processChunk(chunk, videoId));
