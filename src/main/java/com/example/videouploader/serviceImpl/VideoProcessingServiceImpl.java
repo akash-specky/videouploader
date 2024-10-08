@@ -6,6 +6,7 @@ import com.example.videouploader.service.VideoProcessingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,9 +15,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.example.videouploader.utility.Constant.*;
@@ -46,55 +46,52 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
         return videoId;
     }
 
-    private void processChunksAsync(List<File> chunks, String videoId, String fileName, File tempFile) {
-        CountDownLatch latch = new CountDownLatch(chunks.size());
+    @Async
+    public void processChunksAsync(List<File> chunks, String videoId, String fileName, File tempFile) {
         AtomicInteger processedChunks = new AtomicInteger(0);
 
-        for (File chunk : chunks) {
-            taskExecutor.execute(() -> {
-                processChunk(chunk, videoId);
-                int completedChunks = processedChunks.incrementAndGet();
-                logProgress(completedChunks, chunks.size());
-                latch.countDown();
-            });
-        }
+        CompletableFuture[] futures = chunks.stream()
+                .map(chunk -> CompletableFuture.runAsync(() -> processChunk(chunk, videoId), taskExecutor)
+                        .thenRun(() -> logProgress(processedChunks.incrementAndGet(), chunks.size()))
+                )
+                .toArray(CompletableFuture[]::new);
 
-        AtomicBoolean isCombinedSuccessfully = new AtomicBoolean(false);
-
-        taskExecutor.execute(() -> {
+        // Once all chunks are processed, combine the video
+        CompletableFuture.allOf(futures).thenRunAsync(() -> {
             try {
-                latch.await();
                 File combinedVideo = videoCombiningService.combineChunks(chunks, videoId, fileName);
-                isCombinedSuccessfully.set(combinedVideo.exists());
 
-                if (isCombinedSuccessfully.get()) {
+                if (combinedVideo.exists()) {
                     logger.info("Combined video saved at: {}", combinedVideo.getAbsolutePath());
+
                     tempFile.delete();
                     File chunkDir = new File(CHUNK_DIR, videoId);
                     deleteFileOrDirectory(chunkDir);
                     logger.info("Temporary files and chunk directory deleted.");
                 } else {
-                    logger.info("Failed to combine video.");
+                    logger.error("Failed to combine video.");
                 }
             } catch (Exception e) {
                 logger.error("Error occurred during video combination.", e);
             }
-        });
+        }, taskExecutor);
+    }
+
+    @Async
+    public void processChunk(File chunk, String videoId) {
+        try {
+            logger.info("Processing chunk: {} for video ID: {}", chunk.getName(), videoId);
+
+             Thread.sleep(1000);
+
+        } catch (Exception e) {
+            logger.error("Error processing chunk: {}", chunk.getName(), e);
+        }
     }
 
     private void logProgress(int completedChunks, int totalChunks) {
         int progressPercentage = (int) ((completedChunks / (float) totalChunks) * 100);
         logger.info("Progress: {}% done", progressPercentage);
-    }
-
-    private void processChunk(File chunk, String videoId) {
-        try {
-            logger.info("Processing chunk: {} for video ID: {}", chunk.getName(), videoId);
-
-            Thread.sleep(1000);
-        } catch (Exception e) {
-            logger.error("Error processing chunk: {}", chunk.getName(), e);
-        }
     }
 
     private File saveFileToDirectory(MultipartFile file) throws IOException {
