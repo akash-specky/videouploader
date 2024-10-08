@@ -52,11 +52,11 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
 
         CompletableFuture[] futures = chunks.stream()
                 .map(chunk -> CompletableFuture.runAsync(() -> processChunk(chunk, videoId), taskExecutor)
-                        .thenRun(() -> logProgress(processedChunks.incrementAndGet(), chunks.size()))
+                        .thenRun(() -> logProgress(processedChunks.incrementAndGet(), chunks.size(),videoId))
                 )
                 .toArray(CompletableFuture[]::new);
 
-        // Once all chunks are processed, combine the video
+
         CompletableFuture.allOf(futures).thenRunAsync(() -> {
             try {
                 File combinedVideo = videoCombiningService.combineChunks(chunks, videoId, fileName);
@@ -89,9 +89,9 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
         }
     }
 
-    private void logProgress(int completedChunks, int totalChunks) {
+    private void logProgress(int completedChunks, int totalChunks,String videoId) {
         int progressPercentage = (int) ((completedChunks / (float) totalChunks) * 100);
-        logger.info("Progress: {}% done", progressPercentage);
+        logger.info("Progress: {}% done for video ID: {}", progressPercentage, videoId);
     }
 
     private File saveFileToDirectory(MultipartFile file) throws IOException {
