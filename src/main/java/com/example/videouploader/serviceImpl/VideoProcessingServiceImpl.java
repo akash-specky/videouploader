@@ -95,8 +95,14 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
     }
 
     private File saveFileToDirectory(MultipartFile file) throws IOException {
+
+        File uploadDir = new File(UPLOAD_DIR);
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
         File savedFile = new File(UPLOAD_DIR, Objects.requireNonNull(file.getOriginalFilename()));
         file.transferTo(savedFile);
+        System.out.println(savedFile.getAbsolutePath());
         return savedFile;
     }
 
