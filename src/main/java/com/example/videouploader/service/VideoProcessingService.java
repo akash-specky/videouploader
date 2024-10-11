@@ -2,6 +2,7 @@ package com.example.videouploader.service;
 
 
 import com.example.videouploader.Exception.VideoException;
+import com.example.videouploader.dto.PaginationDTO;
 import com.example.videouploader.model.PaginatedResponse;
 import com.example.videouploader.model.VideoDetails;
 import com.example.videouploader.model.VideoProperties;
@@ -16,11 +17,11 @@ public interface VideoProcessingService {
 
     public String processUploadedVideo(MultipartFile file) throws Exception;
 
-    public String saveVideoProperties(String videoPath, VideoProperties properties) throws VideoException, InvalidPropertiesFormatException;
+//    public String saveVideoProperties(String videoPath, VideoProperties properties) throws VideoException, InvalidPropertiesFormatException;
 
     VideoDetails getVideoById(Integer id) throws VideoException;
 
     List<VideoDetails> getAllVideos() throws VideoException;
 
-    PaginatedResponse getAllVideosWithPagination(Integer page, Integer size) throws VideoException;
+    PaginatedResponse getAllVideosWithPagination(PaginationDTO paginationDTO) throws VideoException;
 }

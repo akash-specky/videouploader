@@ -2,6 +2,7 @@ package com.example.videouploader.controller;
 
 
 import com.example.videouploader.Exception.VideoException;
+import com.example.videouploader.dto.PaginationDTO;
 import com.example.videouploader.model.PaginatedResponse;
 import com.example.videouploader.model.VideoDetails;
 import com.example.videouploader.model.VideoProperties;
@@ -37,13 +38,6 @@ public class VideoController {
         }
     }
 
-    @GetMapping("/saveVideo")
-    public ResponseEntity<String> saveVideo() throws VideoException, InvalidPropertiesFormatException {
-        VideoProperties videoProperties = new VideoProperties(1L, "A", "B", 1.2f);
-
-        return new ResponseEntity<>(videoProcessingService.saveVideoProperties("path", videoProperties), HttpStatus.CREATED);
-
-    }
 
     @GetMapping("/getVideo/{id}")
     public ResponseEntity<VideoDetails> getVideo(@PathVariable Integer id) throws VideoException {
@@ -59,10 +53,10 @@ public class VideoController {
 
     }
 
-    @GetMapping("/getVideos/{pages}/{size}")
-    public ResponseEntity<PaginatedResponse> getAllVideosWithPagination(@PathVariable Integer pages, @PathVariable Integer size) throws VideoException {
+    @PostMapping("/getPagination")
+    public ResponseEntity<PaginatedResponse> getAllVideosWithPagination(@RequestBody PaginationDTO paginationDTO) throws VideoException {
 
-        return new ResponseEntity<>(videoProcessingService.getAllVideosWithPagination(pages, size), HttpStatus.OK);
+        return new ResponseEntity<>(videoProcessingService.getAllVideosWithPagination(paginationDTO), HttpStatus.OK);
 
     }
 }
