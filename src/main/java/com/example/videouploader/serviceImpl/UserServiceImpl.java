@@ -28,7 +28,12 @@ public class UserServiceImpl implements UserService {
             throw new Exception("Mobile number already exists");
         }
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        if (user.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        } else {
+
+            user.setPassword(null);
+        }
 
 
         return userRepository.save(user);
