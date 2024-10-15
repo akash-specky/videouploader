@@ -27,7 +27,7 @@ public class UserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    @GetMapping("/login/success")
+    @GetMapping("/login")
     public String loginSuccess(@AuthenticationPrincipal Object principal) throws Exception {
         String email = null;
         String name = null;
