@@ -1,5 +1,6 @@
 package com.example.videouploader.serviceImpl;
 
+import com.example.videouploader.exceptions.UserAlreadyExist;
 import com.example.videouploader.model.User;
 import com.example.videouploader.repo.UserRepository;
 import com.example.videouploader.service.UserService;
@@ -42,7 +43,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User registerUser(Object principal) throws Exception {
+    public User registerUser(Object principal) throws UserAlreadyExist {
         String email = null;
         String name = null;
         String ssoId = null;
@@ -63,11 +64,11 @@ public class UserServiceImpl implements UserService {
         user.setName(name);
         user.setSsoId(ssoId);
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            throw new Exception("Email already exists");
+            throw new UserAlreadyExist("Email already exists");
         }
 
         if (userRepository.findByMobileNo(user.getMobileNo()).isPresent()) {
-            throw new Exception("Mobile number already exists");
+            throw new UserAlreadyExist("Mobile number already exists");
         }
         if (user.getPassword() != null) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));

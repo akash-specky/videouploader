@@ -1,6 +1,7 @@
 package com.example.videouploader.controller;
 
 
+import com.example.videouploader.exceptions.UserAlreadyExist;
 import com.example.videouploader.model.User;
 import com.example.videouploader.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,7 @@ public class UserController {
         }
     }
     @GetMapping("/login")
-    public User loginSuccess(@AuthenticationPrincipal Object principal) throws Exception {
+    public User loginSuccess(@AuthenticationPrincipal Object principal) throws UserAlreadyExist {
 
         return userService.registerUser(principal);
     }
