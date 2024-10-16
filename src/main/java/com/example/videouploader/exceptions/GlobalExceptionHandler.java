@@ -1,7 +1,6 @@
 package com.example.videouploader.exceptions;
 
 import com.example.videouploader.dtos.CommonResponseDTO;
-import com.example.videouploader.serviceImpl.VideoProcessingServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
