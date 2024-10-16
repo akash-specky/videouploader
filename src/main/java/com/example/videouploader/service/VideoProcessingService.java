@@ -9,5 +9,5 @@ import java.io.IOException;
 @Service
 public interface VideoProcessingService {
 
-    public String processUploadedVideo(MultipartFile file) throws Exception;
+    public String processUploadedVideo(MultipartFile file,String resolution) throws Exception;
 }

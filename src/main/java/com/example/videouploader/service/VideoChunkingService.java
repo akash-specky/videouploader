@@ -9,5 +9,5 @@ import java.util.List;
 @Service
 public interface VideoChunkingService {
 
-    public List<File> chunkVideo(File videoFile, String videoId) throws Exception;
+    public List<File> chunkVideo(File videoFile, String videoId,String resolution) throws Exception;
 }

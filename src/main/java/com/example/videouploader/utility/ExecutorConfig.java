@@ -16,8 +16,8 @@ public class ExecutorConfig {
 
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(10);
-        executor.setMaxPoolSize(20);
-        executor.setQueueCapacity(500);
+        executor.setMaxPoolSize(30);
+        executor.setQueueCapacity(100);
         executor.setThreadNamePrefix("VideoProcessing-");
         executor.initialize();
         return executor;
