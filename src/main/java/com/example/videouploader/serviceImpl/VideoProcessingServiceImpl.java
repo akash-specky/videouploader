@@ -1,20 +1,36 @@
 package com.example.videouploader.serviceImpl;
 
+import com.example.videouploader.Exception.VideoException;
+import com.example.videouploader.dto.PaginationDTO;
+import com.example.videouploader.model.PaginatedResponse;
+import com.example.videouploader.model.VideoDetails;
+import com.example.videouploader.model.VideoProperties;
+import com.example.videouploader.repository.VideoDetailsRepository;
 import com.example.videouploader.service.VideoChunkingService;
 import com.example.videouploader.service.VideoCombiningService;
 import com.example.videouploader.service.VideoProcessingService;
+
+import com.example.videouploader.utility.CustomSequences;
+import org.mp4parser.IsoFile;
+import org.mp4parser.boxes.iso14496.part12.MovieHeaderBox;
+import org.mp4parser.boxes.iso14496.part12.TrackBox;
+import org.mp4parser.boxes.sampleentry.VisualSampleEntry;
+import org.mp4parser.tools.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,7 +49,59 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
     @Autowired
     private VideoCombiningService videoCombiningService;
 
+    @Autowired
+    CustomSequences sequences;
+
+
     private static final Logger logger = LoggerFactory.getLogger(VideoProcessingServiceImpl.class);
+
+    @Autowired
+    private VideoDetailsRepository videoDetailsRepository;
+
+    @Override
+    public String processUploadedVideo(MultipartFile file) throws Exception {
+        extractVideoProperties(file);
+
+        String videoId = UUID.randomUUID().toString();
+        return videoId;
+    }
+
+    @Override
+    public VideoDetails getVideoById(Integer id) throws VideoException {
+        Optional<VideoDetails> optional = videoDetailsRepository.findById(id);
+        if (optional.isPresent()) {
+            return videoDetailsRepository.findById(id).get();
+        }
+        throw new VideoException("Invalid video details!");
+    }
+
+    @Override
+    public List<VideoDetails> getAllVideos() throws VideoException {
+        List<VideoDetails> videoDetailsList = videoDetailsRepository.findAll();
+
+        if (videoDetailsList.isEmpty()) {
+            throw new VideoException("No Videos is availible");
+        }
+        return videoDetailsList;
+    }
+
+    @Override
+    public PaginatedResponse getAllVideosWithPagination(PaginationDTO paginationDTO) throws VideoException {
+        Pageable pageable = PageRequest.of(paginationDTO.getPageNo(), paginationDTO.getSize());
+        Page<VideoDetails> videoPage = videoDetailsRepository.findAll(pageable);
+
+        if (videoPage.isEmpty()) {
+            throw new VideoException("No Videos is availible");
+        }
+
+        return new PaginatedResponse(
+                videoPage.getContent(),
+                videoPage.getTotalElements(),
+                videoPage.getTotalPages(),
+                paginationDTO.getPageNo(),
+                paginationDTO.getSize()
+        );
+    }
 
     @Override
     public String processUploadedVideo(MultipartFile file, String resolution) throws Exception {
@@ -52,7 +120,7 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
 
         CompletableFuture[] futures = chunks.stream()
                 .map(chunk -> CompletableFuture.runAsync(() -> processChunk(chunk, videoId), taskExecutor)
-                        .thenRun(() -> logProgress(processedChunks.incrementAndGet(), chunks.size(),videoId))
+                        .thenRun(() -> logProgress(processedChunks.incrementAndGet(), chunks.size(), videoId))
                 )
                 .toArray(CompletableFuture[]::new);
 
@@ -82,14 +150,14 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
         try {
             logger.info("Processing chunk: {} for video ID: {}", chunk.getName(), videoId);
 
-             Thread.sleep(1000);
+            Thread.sleep(1000);
 
         } catch (Exception e) {
             logger.error("Error processing chunk: {}", chunk.getName(), e);
         }
     }
 
-    private void logProgress(int completedChunks, int totalChunks,String videoId) {
+    private void logProgress(int completedChunks, int totalChunks, String videoId) {
         int progressPercentage = (int) ((completedChunks / (float) totalChunks) * 100);
         logger.info("Progress: {}% done for video ID: {}", progressPercentage, videoId);
     }
@@ -114,5 +182,48 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
         }
         fileOrDirectory.delete();
         logger.info("Deleted: {}", fileOrDirectory.getAbsolutePath());
+    }
+
+    public void extractVideoProperties(MultipartFile multipartFile) throws IOException {
+
+
+        File file = convertMultipartFileToFile(multipartFile);
+
+        IsoFile isoFile = new IsoFile(file);
+
+        // Extract video duration and fps
+        MovieHeaderBox header = Path.getPath(isoFile, "moov/mvhd");
+        long duration = header.getDuration();
+        long timescale = header.getTimescale();
+        float fps = timescale / (float) duration;
+
+        List<TrackBox> trackBoxes = isoFile.getMovieBox().getBoxes(TrackBox.class);
+
+        String codec = "";
+        for (TrackBox trackBox : trackBoxes) {
+
+            if (trackBox.getTrackHeaderBox().getWidth() > 0) {
+                VisualSampleEntry visualSampleEntry = Path.getPath(trackBox, "mdia/minf/stbl/stsd/avc1");
+                if (visualSampleEntry != null) {
+                    codec = visualSampleEntry.getType();
+                }
+            }
+        }
+        String format = file.getName().substring(file.getName().lastIndexOf('.') + 1);
+        VideoProperties videoProperties = new VideoProperties(multipartFile.getSize(), codec, format, fps);
+
+        VideoDetails videoDetails = new VideoDetails();
+        videoDetails.setId(sequences.getNextSequence("videoDetails"));
+        videoDetails.setVideoProperties(videoProperties);
+        videoDetailsRepository.save(videoDetails);
+
+    }
+
+    private File convertMultipartFileToFile(MultipartFile multipartFile) throws IOException {
+        File convFile = new File(System.getProperty("java.io.tmpdir") + "/" + multipartFile.getOriginalFilename());
+        FileOutputStream fos = new FileOutputStream(convFile);
+        fos.write(multipartFile.getBytes());
+        fos.close();
+        return convFile;
     }
 }
