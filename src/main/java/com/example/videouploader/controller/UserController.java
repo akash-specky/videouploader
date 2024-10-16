@@ -11,7 +11,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("v1/users")
 public class UserController {
 
     @Autowired
@@ -28,24 +28,9 @@ public class UserController {
         }
     }
     @GetMapping("/login")
-    public String loginSuccess(@AuthenticationPrincipal Object principal) throws Exception {
-        String email = null;
-        String name = null;
+    public User loginSuccess(@AuthenticationPrincipal Object principal) throws Exception {
 
-        if (principal instanceof OidcUser) {
-            OidcUser oidcUser = (OidcUser) principal;
-            email = oidcUser.getEmail();
-            name = oidcUser.getFullName();
-        } else if (principal instanceof OAuth2User) {
-            OAuth2User oauthUser = (OAuth2User) principal;
-            email = (String) oauthUser.getAttributes().get("email");
-            name = (String) oauthUser.getAttributes().get("name");
-        }
-        User user = new User();
-        user.setEmail(email);
-        user.setName(name);
-        userService.registerUser(user);
-        return "Login successful! Welcome " + name + ". Your email is " + email;
+        return userService.registerUser(principal);
     }
 
 }

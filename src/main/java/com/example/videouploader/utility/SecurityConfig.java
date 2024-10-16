@@ -22,7 +22,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .defaultSuccessUrl("/v1/users/login/success", true)
+                        .defaultSuccessUrl("/v1/users/login", true)
                 )
                 .formLogin(form -> form
                         .loginPage("/login")

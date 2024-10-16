@@ -8,5 +8,6 @@ import org.springframework.stereotype.Service;
 public interface UserService {
 
     public User registerUser(User user) throws Exception ;
+    public User registerUser(Object principal) throws Exception ;
 
 }

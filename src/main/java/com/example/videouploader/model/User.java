@@ -23,7 +23,15 @@ public class User {
     private String country;
     private String pincode;
     private String password;
+    private String  ssoId ;
 
+    public String getSsoId() {
+        return ssoId;
+    }
+
+    public void setSsoId(String ssoId) {
+        this.ssoId = ssoId;
+    }
 
     public User() {
     }
