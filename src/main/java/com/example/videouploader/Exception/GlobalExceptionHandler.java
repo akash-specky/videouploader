@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(VideoException.class)
-    public ResponseEntity<MyErrorDetails> UserException(VideoException ue, WebRequest wr){
+    public ResponseEntity<MyErrorDetails> UsgerException(VideoException ue, WebRequest wr){
 
         MyErrorDetails error = new MyErrorDetails();
         error.setLocalDateTime(LocalDateTime.now());
