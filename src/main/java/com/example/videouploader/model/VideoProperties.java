@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -14,8 +16,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class VideoProperties {
 
     @Id
-    Long size;
-    String codec;
-    String format;
-    Float fps;
+    Integer id;
+
+    private Integer frameWidth;
+    private Integer frameHeight;
+    private Double frameRate;
+    private LocalDateTime createdDate;
+    private LocalDateTime modifiedDate;
+
 }

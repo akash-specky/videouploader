@@ -9,6 +9,7 @@ import com.example.videouploader.model.VideoProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.InvalidPropertiesFormatException;
 import java.util.List;
 
@@ -24,4 +25,8 @@ public interface VideoProcessingService {
     List<VideoDetails> getAllVideos() throws VideoException;
 
     PaginatedResponse getAllVideosWithPagination(PaginationDTO paginationDTO) throws VideoException;
+
+    String uploadThumbnail(MultipartFile multipartFile);
+
+    String convertVideosAsync() throws IOException;
 }

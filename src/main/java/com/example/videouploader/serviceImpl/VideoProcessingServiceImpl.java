@@ -11,23 +11,41 @@ import com.example.videouploader.service.VideoChunkingService;
 import com.example.videouploader.service.VideoCombiningService;
 import com.example.videouploader.service.VideoProcessingService;
 import com.example.videouploader.utility.CustomSequences;
+import jakarta.annotation.PostConstruct;
+import net.bramp.ffmpeg.FFmpeg;
+import net.bramp.ffmpeg.FFmpegExecutor;
+import net.bramp.ffmpeg.builder.FFmpegBuilder;
+import net.coobird.thumbnailator.Thumbnails;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.tika.Tika;
-import org.mp4parser.IsoFile;
-import org.mp4parser.boxes.iso14496.part12.MovieHeaderBox;
-import org.mp4parser.boxes.iso14496.part12.TrackBox;
-import org.mp4parser.boxes.sampleentry.VisualSampleEntry;
-import org.mp4parser.tools.Path;
+import org.bytedeco.ffmpeg.global.avcodec;
+import org.bytedeco.javacv.*;
+import org.bytedeco.javacv.FrameGrabber.Exception;
+import org.bytedeco.javacv.FrameGrabber;
+import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executor;
 
@@ -37,6 +55,21 @@ import static com.example.videouploader.utility.Constant.UPLOAD_DIR;
 @Service
 public class VideoProcessingServiceImpl implements VideoProcessingService {
 
+
+    private static final long MAX_FILE_SIZE = 500 * 1024; // 500KB
+
+    // Folder to save thumbnails
+    private static final String UPLOAD_DIR = "uploads/thumbnails/";
+
+    // Define thumbnail sizes (small, medium, large)
+    private static final int SMALL_WIDTH = 100;
+    private static final int SMALL_HEIGHT = 100;
+
+    private static final int MEDIUM_WIDTH = 300;
+    private static final int MEDIUM_HEIGHT = 300;
+
+    private static final int LARGE_WIDTH = 600;
+    private static final int LARGE_HEIGHT = 600;
 
     @Autowired
     CustomSequences sequences;
@@ -65,7 +98,7 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
 
 
     @Override
-    public String processUploadedVideo(MultipartFile file) throws Exception {
+    public String processUploadedVideo(MultipartFile file) throws IOException {
 
 //        File tempFile = saveFileToDirectory(file);
 
@@ -78,32 +111,7 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
         return videoId;
     }
 
-//    @Override
-//    public String saveVideoProperties(String videoPath, VideoProperties properties) throws VideoException {
-//
-////        File file = new File(videoPath);
-//
-////        if (!file.exists()){
-////            throw new IllegalArgumentException("Invalid file path");
-////        }
-////        if (!properties.getFormat().equalsIgnoreCase("mp4")){
-////            throw new IllegalArgumentException("Invalid Video format exception");
-////        }
-//
-//        try{
-//            VideoDetails videoDetails = new VideoDetails();
-//            videoDetails.setId(sequences.getNextSequence("videoDetails"));
-//            videoDetails.setPath(videoPath);
-//            videoDetails.setVideoProperties(properties);
-//            videoDetailsRepository.save(videoDetails);
-//
-//            return "Properties saved successfully!";
-//
-//        }catch (Exception e){
-//            throw new VideoException("Invalid video details!");
-//        }
-//
-//    }
+
 
     @Override
     public VideoDetails getVideoById(Integer id) throws VideoException {
@@ -130,21 +138,91 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
     @Override
     public PaginatedResponse getAllVideosWithPagination(PaginationDTO paginationDTO) throws VideoException {
 
-        Pageable pageable = PageRequest.of(paginationDTO.getPageNo(), paginationDTO.getSize());
-        Page<VideoDetails> videoPage = videoDetailsRepository.findAll(pageable);
+        if (paginationDTO.getPageNo()>0){
+            Pageable pageable = PageRequest.of(paginationDTO.getPageNo()-1, paginationDTO.getSize());
+            Page<VideoDetails> videoPage = videoDetailsRepository.findAll(pageable);
 
-        if (videoPage.isEmpty()){
-            throw new VideoException("No Videos is availible");
+            if (videoPage.isEmpty()){
+                throw new VideoException("No Videos is availible");
+            }
+
+            return new PaginatedResponse(
+                    videoPage.getContent(),
+                    videoPage.getTotalElements(),
+                    videoPage.getTotalPages(),
+                    paginationDTO.getPageNo(),
+                    paginationDTO.getSize()
+            );
+        }
+        throw new RuntimeException("invalid pageNo");
+
+    }
+
+    @Override
+    public String uploadThumbnail(MultipartFile file) {
+
+        String extension = FilenameUtils.getExtension(file.getOriginalFilename());
+
+        if (!extension.equals("jpg") && !extension.equals("jpeg") && !extension.equals("png")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPG and PNG files are accepted.");
         }
 
-        return new PaginatedResponse(
-                videoPage.getContent(),
-                videoPage.getTotalElements(),
-                videoPage.getTotalPages(),
-                paginationDTO.getPageNo(),
-                paginationDTO.getSize()
-        );
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File size must be less than 500KB.");
+        }
+
+        String originalFileName = System.currentTimeMillis() + "_original." + extension;
+        File savedFile = new File("c://Users/gaurav.singh/Desktop/videoUploaderTask/thumnails", originalFileName);
+
+        try (FileOutputStream fos = new FileOutputStream(savedFile)) {
+            fos.write(file.getBytes());
+
+            // Create and save thumbnails
+            createThumbnail(savedFile, SMALL_WIDTH, SMALL_HEIGHT, "small");
+            createThumbnail(savedFile, MEDIUM_WIDTH, MEDIUM_HEIGHT, "medium");
+            createThumbnail(savedFile, LARGE_WIDTH, LARGE_HEIGHT, "large");
+
+            return "Thumbnails uploaded successfully: " + originalFileName;
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to upload thumbnails.");
+        }
     }
+
+
+    private void createThumbnail(File file, int width, int height, String size) throws IOException {
+
+        String extension = FilenameUtils.getExtension(file.getName());
+//        File tempFile = File.createTempFile("upload_", "_" + size + "." + extension);
+//
+        try {
+            // Write the MultipartFile content to the temporary file
+//            FileOutputStream fos = new FileOutputStream(tempFile);
+//            byte[] bytes = file.getBytes();
+//            fos.write(bytes);
+
+            // Determine the output file path for resized thumbnails
+            String fileName = System.currentTimeMillis() + "_" + size + "." + extension;
+            File outputFile = new File("c://Users/gaurav.singh/Desktop/videoUploaderTask/thumnails" + fileName);
+
+            // Use the temp file for creating thumbnails
+            Thumbnails.of(file)
+                    .size(width, height)
+                    .toFile(outputFile);
+        } catch (IOException e) {
+            throw new IOException(e.getMessage());
+        }
+//        finally {
+        // Delete the temporary file after processing
+//            if (tempFile.exists()) {
+//                tempFile.delete();
+//            }
+//    }
+
+    }
+
+
+
 
     private void processChunksAsync(List<File> chunks, String videoId) {
         for (File chunk : chunks) {
@@ -159,6 +237,8 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
                 System.out.println("Combined video saved at: " + combinedVideo.getAbsolutePath());
             } catch (Exception e) {
                 e.printStackTrace();
+            } catch (java.lang.Exception e) {
+                throw new RuntimeException(e);
             }
         });
     }
@@ -166,13 +246,14 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
         try {
 
             System.out.println("Processing chunk: " + chunk.getName()+"  "+videoId);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.err.println("Error processing chunk: " + chunk.getName());
             e.printStackTrace();
         }
     }
 
     private File saveFileToDirectory(MultipartFile file) throws IOException {
+
 
 
         File savedFile = new File(UPLOAD_DIR, Objects.requireNonNull(file.getOriginalFilename()));
@@ -188,34 +269,96 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
         // Convert MultipartFile to a File
         File file = convertMultipartFileToFile(multipartFile);
 
-        IsoFile isoFile = new IsoFile(file);
+        try {
+            // Convert MultipartFile to a temporary file
+            File videoFile = File.createTempFile("temp-video", multipartFile.getOriginalFilename());
+            multipartFile.transferTo(videoFile);
 
-        // Extract video duration and fps
-        MovieHeaderBox header = Path.getPath(isoFile, "moov/mvhd");
-        long duration = header.getDuration();
-        long timescale = header.getTimescale();
-        float fps = timescale / (float) duration;
+            // Get created and modified dates
+            Path filePath = Paths.get(videoFile.getAbsolutePath());
+            BasicFileAttributes attr = Files.readAttributes(filePath, BasicFileAttributes.class);
 
-        List<TrackBox> trackBoxes = isoFile.getMovieBox().getBoxes(TrackBox.class);
+            LocalDateTime createdDate = LocalDateTime.ofInstant(attr.creationTime().toInstant(), ZoneId.systemDefault());
+            LocalDateTime modifiedDate = LocalDateTime.ofInstant(attr.lastModifiedTime().toInstant(), ZoneId.systemDefault());
 
-//        String codec = Path.getPath(trackBoxes.get(0), "mdia/minf/stbl/stsd/avc1").getType();
-        String codec = "";
-        for (TrackBox trackBox : trackBoxes) {
+            // Use FFmpegFrameGrabber to extract video properties
+            FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(videoFile);
+            grabber.start();
 
-            if (trackBox.getTrackHeaderBox().getWidth() > 0) {
-                VisualSampleEntry visualSampleEntry = Path.getPath(trackBox, "mdia/minf/stbl/stsd/avc1");
-                if (visualSampleEntry != null) {
-                    codec = visualSampleEntry.getType();
+            // Extract properties
+            int frameWidth = grabber.getImageWidth();
+            int frameHeight = grabber.getImageHeight();
+            String codec = grabber.getVideoCodecName();
+            double frameRate = grabber.getFrameRate();
+            double fps = grabber.getFrameRate();
+            long fileSize = Files.size(filePath);
+            System.out.println(grabber.getMetadata());
+            System.out.println(grabber.getVideoMetadata());
+
+            String format = file.getName().substring(file.getName().lastIndexOf('.') + 1);
+
+            if (fps <= 0) {
+                int frameCount = 0;
+                long startTime = System.currentTimeMillis();
+                while (true) {
+                    grabber.grab();
+                    frameCount++;
+                    if (System.currentTimeMillis() - startTime >= 1000) {
+                        break;
+                    }
                 }
+                fps = frameCount;
             }
-        }
-        String format = file.getName().substring(file.getName().lastIndexOf('.') + 1);
-        VideoProperties videoProperties = new VideoProperties(multipartFile.getSize(), codec,format, fps);
 
-        VideoDetails videoDetails = new VideoDetails();
-        videoDetails.setId(sequences.getNextSequence("videoDetails"));
-        videoDetails.setVideoProperties(videoProperties);
-        videoDetailsRepository.save(videoDetails);
+            VideoProperties videoProperties = new VideoProperties
+                    (sequences.getNextSequence("videoProperties"), frameWidth, frameHeight, frameRate, createdDate, modifiedDate);
+
+            VideoDetails videoDetails = new VideoDetails(sequences.getNextSequence("videoDetails"), multipartFile.getSize(), codec,format, fps,videoProperties);
+//            videoDetails.setId(sequences.getNextSequence("videoDetails"));
+//            videoDetails.setVideoProperties(videoProperties);
+            videoDetailsRepository.save(videoDetails);
+
+            // Clean up
+            grabber.stop();
+            videoFile.delete();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+//        IsoFile isoFile = new IsoFile(file);
+//
+//        // Extract video duration and fps
+//        MovieHeaderBox header = Path.getPath(isoFile, "moov/mvhd");
+//        long duration = header.getDuration();
+//        long timescale = header.getTimescale();
+//        float fps = timescale / (float) duration;
+//
+//        List<TrackBox> trackBoxes = isoFile.getMovieBox().getBoxes(TrackBox.class);
+//
+////        String codec = Path.getPath(trackBoxes.get(0), "mdia/minf/stbl/stsd/avc1").getType();
+//        String codec = "";
+//        for (TrackBox trackBox : trackBoxes) {
+//
+//            if (trackBox.getTrackHeaderBox().getWidth() > 0) {
+//                VisualSampleEntry visualSampleEntry = Path.getPath(trackBox, "mdia/minf/stbl/stsd/avc1");
+//                if (visualSampleEntry != null) {
+//                    codec = visualSampleEntry.getType();
+//                }
+//            }
+//        }
+//        String format = file.getName().substring(file.getName().lastIndexOf('.') + 1);
+//        if (!format.equalsIgnoreCase("mp4")){
+//            throw new IllegalArgumentException("Invalid Video format exception");
+//        }
+
+//        VideoProperties videoProperties = new VideoProperties
+//                (sequences.getNextSequence("videoProperties"), multipartFile.getSize(), codec,format, fps);
+//
+//        VideoDetails videoDetails = new VideoDetails();
+//        videoDetails.setId(sequences.getNextSequence("videoDetails"));
+//        videoDetails.setVideoProperties(videoProperties);
+//        videoDetailsRepository.save(videoDetails);
 
     }
 
@@ -229,4 +372,53 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
     }
 
 
+
+//    @Async
+    @Override
+    public String convertVideosAsync() throws IOException {
+
+
+        String inputFilePath = "c://Users/gaurav.singh/Downloads/animal.mp4";
+        String outputFilePath = "videos/output_144p.mp4";
+        // Convert the video to different resolutions
+        convertVideo(inputFilePath, "Thumbnail//output_144p.mp4", 256, 144);
+        convertVideo(inputFilePath, "Thumbnail//output_240p.mp4", 426, 240);
+        convertVideo(inputFilePath, "Thumbnail//output_480p.mp4", 854, 480);
+        convertVideo(inputFilePath, "Thumbnail//output_720p.mp4", 1280, 720);
+        return  "resolution Successfully!";
     }
+
+
+    public static void convertVideo(String inputFilePath, String outputFilePath, int width, int height) {
+        try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFilePath);
+             FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(outputFilePath, width, height)) {
+
+            // Set formats and start grabber and recorder
+            grabber.start();
+            recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+            recorder.setFormat("mp4");
+            recorder.setFrameRate(grabber.getFrameRate());
+            recorder.setVideoBitrate(grabber.getVideoBitrate());
+            recorder.setVideoQuality(0);  // Highest quality
+
+            recorder.start();
+
+            // Read frames and write to the output
+            Frame frame;
+            while ((frame = grabber.grab()) != null) {
+                recorder.record(frame);
+            }
+
+            // Stop everything
+            recorder.stop();
+            grabber.stop();
+
+            System.out.println("Converted " + outputFilePath + " successfully.");
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Failed to convert video to " + width + "x" + height);
+        }
+    }
+
+
+}

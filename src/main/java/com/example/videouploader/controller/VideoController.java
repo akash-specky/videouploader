@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.InvalidPropertiesFormatException;
 import java.util.List;
 
@@ -58,5 +59,16 @@ public class VideoController {
 
         return new ResponseEntity<>(videoProcessingService.getAllVideosWithPagination(paginationDTO), HttpStatus.OK);
 
+    }
+
+
+    @PostMapping("/uploadThumbnail")
+    public ResponseEntity<String> uploadThumbnail(@RequestParam("file") MultipartFile file) {
+        return new ResponseEntity<>(videoProcessingService.uploadThumbnail(file), HttpStatus.OK);
+    }
+
+    @GetMapping("/VideosAsync")
+    public ResponseEntity<String> convertVideosAsync() throws IOException {
+        return new ResponseEntity<>(videoProcessingService.convertVideosAsync(), HttpStatus.OK);
     }
 }

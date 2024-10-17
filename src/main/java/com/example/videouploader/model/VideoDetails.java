@@ -16,27 +16,20 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class VideoDetails {
+
     @Id
     Integer id;
 
-    String path;
+    Long size;
+    String codec;
+    String format;
+    double fps;
 
-    @CreatedDate
-    LocalDateTime createdAt;
-
-    @LastModifiedBy
-    LocalDateTime updatedAt;
+//    @CreatedDate
+//    LocalDateTime createdAt;
+//
+//    @LastModifiedBy
+//    LocalDateTime updatedAt;
 
     VideoProperties videoProperties;
 }
-
-//public class VideoDetails {
-//    @Id
-//    Integer id;
-//    String path;
-//    @CreatedDate
-//    LocalDateTime createdAt;
-//    @LastModifiedBy
-//    LocalDateTime updatedAt;
-//    VideoProperties videoProperties;
-//}
