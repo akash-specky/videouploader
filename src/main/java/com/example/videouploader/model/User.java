@@ -19,7 +19,7 @@ public class User {
     @Indexed(unique = true)
     private String mobileNo;
 
-    private String address;
+    private String tokenValue;
     private String country;
     private String pincode;
     private String password;
@@ -76,12 +76,12 @@ public class User {
         this.mobileNo = mobileNo;
     }
 
-    public String getAddress() {
-        return address;
+    public String getTokenValue() {
+        return tokenValue;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setTokenValue(String tokenValue) {
+        this.tokenValue = tokenValue;
     }
 
     public String getCountry() {
@@ -114,7 +114,7 @@ public class User {
         this.occupation = occupation;
         this.email = email;
         this.mobileNo = mobileNo;
-        this.address = address;
+        this.tokenValue = address;
         this.country = country;
         this.pincode = pincode;
         this.password = password;

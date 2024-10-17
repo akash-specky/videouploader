@@ -6,6 +6,8 @@ import com.example.videouploader.repo.UserRepository;
 import com.example.videouploader.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
@@ -43,33 +45,43 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User registerUser(Object principal) throws UserAlreadyExist {
+    public User registerUser(OAuth2User principal) throws UserAlreadyExist {
         String email = null;
         String name = null;
         String ssoId = null;
+        String tokenValue = null;
 
         if (principal instanceof OidcUser) {
             OidcUser oidcUser = (OidcUser) principal;
             email = oidcUser.getEmail();
             name = oidcUser.getFullName();
             ssoId = oidcUser.getSubject();
-        } else if (principal instanceof OAuth2User) {
-            OAuth2User oauthUser = (OAuth2User) principal;
-            email = (String) oauthUser.getAttributes().get("email");
-            name = (String) oauthUser.getAttributes().get("name");
-            ssoId = (String) oauthUser.getAttributes().get("sub");
+            tokenValue = oidcUser.getIdToken().getTokenValue();
+        } else if (principal != null) {
+            email = (String) ((OAuth2User) principal).getAttributes().get("email");
+            name = (String) ((OAuth2User) principal).getAttributes().get("name");
+            ssoId = (String) ((OAuth2User) principal).getAttributes().get("sub");
+            OAuth2AuthenticationToken authToken = (OAuth2AuthenticationToken) principal;
+            String registrationId = authToken.getAuthorizedClientRegistrationId();
+
+//            // Retrieve the OAuth2AuthorizedClient
+//            OAuth2AuthorizedClient authorizedClient = authorizedClientService.loadAuthorizedClient(
+//                    registrationId,
+//                    authToken.getName());
+//
+//            OAuth2AccessToken accessToken = authorizedClient.getAccessToken();
+//            tokenValue = accessToken.getTokenValue();
+
         }
         User user = new User();
         user.setEmail(email);
         user.setName(name);
         user.setSsoId(ssoId);
+        user.setTokenValue(tokenValue);
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new UserAlreadyExist("Email already exists");
         }
 
-        if (userRepository.findByMobileNo(user.getMobileNo()).isPresent()) {
-            throw new UserAlreadyExist("Mobile number already exists");
-        }
         if (user.getPassword() != null) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         } else {
