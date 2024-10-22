@@ -12,6 +12,10 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import javax.swing.text.html.Option;
+import java.util.Date;
+import java.util.Optional;
+
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -78,8 +82,12 @@ public class UserServiceImpl implements UserService {
         user.setName(name);
         user.setSsoId(ssoId);
         user.setTokenValue(tokenValue);
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            throw new UserAlreadyExist("Email already exists");
+        user.setCreatedAt(new Date());
+        user.setUpdatedAt(new Date());
+        Optional<User> user1 = userRepository.findByEmail(user.getEmail());
+        if (user1.isPresent()) {
+
+            return user1.get();
         }
 
         if (user.getPassword() != null) {
