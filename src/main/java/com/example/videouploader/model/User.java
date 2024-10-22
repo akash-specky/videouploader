@@ -26,6 +26,34 @@ public class User {
     private String pincode;
     private String password;
     private String  ssoId ;
+    private String  pictureUrl ;
+    private String  given_name ;
+
+    public String getFamily_name() {
+        return family_name;
+    }
+
+    public void setFamily_name(String family_name) {
+        this.family_name = family_name;
+    }
+
+    public String getGiven_name() {
+        return given_name;
+    }
+
+    public void setGiven_name(String given_name) {
+        this.given_name = given_name;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
+    }
+
+    public void setPictureUrl(String pictureUrl) {
+        this.pictureUrl = pictureUrl;
+    }
+
+    private String  family_name ;
 
     private Date createdAt;
 

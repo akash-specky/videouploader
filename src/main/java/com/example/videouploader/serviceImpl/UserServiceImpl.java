@@ -54,6 +54,9 @@ public class UserServiceImpl implements UserService {
         String name = null;
         String ssoId = null;
         String tokenValue = null;
+        String profile = null;
+        String given_name = null;
+        String family_name = null;
 
         if (principal instanceof OidcUser) {
             OidcUser oidcUser = (OidcUser) principal;
@@ -61,43 +64,46 @@ public class UserServiceImpl implements UserService {
             name = oidcUser.getFullName();
             ssoId = oidcUser.getSubject();
             tokenValue = oidcUser.getIdToken().getTokenValue();
+            given_name = (String) oidcUser.getAttributes().get("given_name");
+            family_name = (String) oidcUser.getAttributes().get("family_name");
+            profile = (String) oidcUser.getAttributes().get("picture");
         } else if (principal != null) {
-            email = (String) ((OAuth2User) principal).getAttributes().get("email");
-            name = (String) ((OAuth2User) principal).getAttributes().get("name");
-            ssoId = (String) ((OAuth2User) principal).getAttributes().get("sub");
+            email = (String) principal.getAttributes().get("email");
+            name = (String) principal.getAttributes().get("name");
+            ssoId = (String) principal.getAttributes().get("sub");
+            given_name = (String) principal.getAttributes().get("given_name");
+            family_name = (String) principal.getAttributes().get("family_name");
+            profile = (String) principal.getAttributes().get("picture");
             OAuth2AuthenticationToken authToken = (OAuth2AuthenticationToken) principal;
-            String registrationId = authToken.getAuthorizedClientRegistrationId();
-
-//            // Retrieve the OAuth2AuthorizedClient
-//            OAuth2AuthorizedClient authorizedClient = authorizedClientService.loadAuthorizedClient(
-//                    registrationId,
-//                    authToken.getName());
-//
-//            OAuth2AccessToken accessToken = authorizedClient.getAccessToken();
-//            tokenValue = accessToken.getTokenValue();
-
         }
+
+
+        Optional<User> existingUser = userRepository.findByEmail(email);
+        if (existingUser.isPresent()) {
+            return existingUser.get();
+        }
+
+
         User user = new User();
         user.setEmail(email);
         user.setName(name);
         user.setSsoId(ssoId);
         user.setTokenValue(tokenValue);
+        user.setGiven_name(given_name);
+        user.setFamily_name(family_name);
+        user.setPictureUrl(profile);
         user.setCreatedAt(new Date());
         user.setUpdatedAt(new Date());
-        Optional<User> user1 = userRepository.findByEmail(user.getEmail());
-        if (user1.isPresent()) {
 
-            return user1.get();
-        }
 
         if (user.getPassword() != null) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         } else {
-
             user.setPassword(null);
         }
 
 
         return userRepository.save(user);
     }
+
 }
