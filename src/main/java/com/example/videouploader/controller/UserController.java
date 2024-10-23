@@ -29,7 +29,7 @@ public class UserController {
         }
     }
     @GetMapping("/login")
-    public User loginSuccess(@AuthenticationPrincipal Object principal) throws UserAlreadyExist {
+    public User loginSuccess(@AuthenticationPrincipal OAuth2User principal) throws UserAlreadyExist {
 
         return userService.registerUser(principal);
     }
