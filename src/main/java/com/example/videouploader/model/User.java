@@ -28,6 +28,15 @@ public class User {
     private String  ssoId ;
     private String  pictureUrl ;
     private String  given_name ;
+    private boolean isAdmin ;
+
+    public boolean isAdmin() {
+        return isAdmin;
+    }
+
+    public void setAdmin(boolean admin) {
+        isAdmin = admin;
+    }
 
     public String getFamily_name() {
         return family_name;

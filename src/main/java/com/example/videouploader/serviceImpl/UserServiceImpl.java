@@ -94,6 +94,7 @@ public class UserServiceImpl implements UserService {
         user.setPictureUrl(profile);
         user.setCreatedAt(new Date());
         user.setUpdatedAt(new Date());
+        user.setAdmin(false);
 
 
         if (user.getPassword() != null) {
