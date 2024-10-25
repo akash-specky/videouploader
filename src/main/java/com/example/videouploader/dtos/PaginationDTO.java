@@ -1,4 +1,4 @@
-package com.example.videouploader.dto;
+package com.example.videouploader.dtos;
 
 
 

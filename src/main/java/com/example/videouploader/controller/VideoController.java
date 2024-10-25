@@ -2,22 +2,19 @@ package com.example.videouploader.controller;
 
 
 import com.example.videouploader.Exception.VideoException;
-import com.example.videouploader.dto.PaginationDTO;
+import com.example.videouploader.dtos.PaginationDTO;
 import com.example.videouploader.model.PaginatedResponse;
 import com.example.videouploader.model.VideoDetails;
-import com.example.videouploader.model.VideoProperties;
 import com.example.videouploader.model.VideoUploadResponse;
 import com.example.videouploader.service.VideoProcessingService;
 import com.example.videouploader.serviceImpl.GoogleTokenValidator;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.aggregation.ArrayOperators;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.InvalidPropertiesFormatException;
 import java.util.List;
 
 @RestController

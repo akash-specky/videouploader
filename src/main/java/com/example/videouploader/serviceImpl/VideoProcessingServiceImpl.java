@@ -1,7 +1,7 @@
 package com.example.videouploader.serviceImpl;
 
 import com.example.videouploader.Exception.VideoException;
-import com.example.videouploader.dto.PaginationDTO;
+import com.example.videouploader.dtos.PaginationDTO;
 import com.example.videouploader.model.PaginatedResponse;
 import com.example.videouploader.model.VideoDetails;
 import com.example.videouploader.model.VideoProperties;
@@ -27,7 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
