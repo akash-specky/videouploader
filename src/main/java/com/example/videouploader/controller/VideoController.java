@@ -2,11 +2,15 @@ package com.example.videouploader.controller;
 
 
 import com.example.videouploader.Exception.VideoException;
+import com.example.videouploader.dtos.CommonResponseDTO;
 import com.example.videouploader.dtos.PaginationDTO;
+import com.example.videouploader.exceptions.InvalidInputException;
 import com.example.videouploader.model.PaginatedResponse;
+import com.example.videouploader.model.Video;
 import com.example.videouploader.model.VideoDetails;
 import com.example.videouploader.model.VideoUploadResponse;
 import com.example.videouploader.service.VideoProcessingService;
+import com.example.videouploader.service.VideoService;
 import com.example.videouploader.serviceImpl.GoogleTokenValidator;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +19,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -25,6 +31,9 @@ public class VideoController {
 
     @Autowired
     private VideoProcessingService videoProcessingService;
+
+    @Autowired
+    private VideoService videoService;
 
 
     @PostMapping("/upload")
@@ -75,5 +84,28 @@ public class VideoController {
 
         return new ResponseEntity<>(videoProcessingService.getAllVideosWithPagination(paginationDTO), HttpStatus.OK);
 
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<CommonResponseDTO> searchVideos(
+            @RequestParam(required = false) String duration,
+            @RequestParam(required = false) String format,
+            @RequestParam(required = false) String uploadTime,
+            @RequestParam(required = false) String query
+    ) {
+        try {
+
+            List<Video> videos = videoService.searchVideos(duration, format, uploadTime, query);
+
+            if (videos.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new CommonResponseDTO(false,"No Video Found",null));
+            }
+            return ResponseEntity.ok(new CommonResponseDTO(true,"",videos));
+
+        } catch (InvalidInputException e) {
+            return ResponseEntity.badRequest().body(new CommonResponseDTO(false,"something went wrong",null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CommonResponseDTO(false,"something went wrong",null));
+        }
     }
 }
