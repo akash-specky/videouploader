@@ -24,4 +24,6 @@ public class VideoProperties {
     private LocalDateTime createdDate;
     private LocalDateTime modifiedDate;
 
+    public VideoProperties(long size, String codec, String format, float fps) {
+    }
 }

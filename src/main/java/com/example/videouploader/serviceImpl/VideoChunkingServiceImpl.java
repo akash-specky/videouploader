@@ -16,11 +16,12 @@ import static com.example.videouploader.utility.Constant.CHUNK_DIR;
 public class VideoChunkingServiceImpl implements VideoChunkingService {
 
     @Override
-    public List<File> chunkVideo(File videoFile, String videoId) throws Exception {
+    public List<File> chunkVideo(File videoFile, String videoId,String resolution) throws Exception {
         File chunkDir = new File(CHUNK_DIR, videoId);
         if (!chunkDir.exists()) {
             chunkDir.mkdirs();
         }
+        String resolutionFilter = getResolutionFilter(resolution);
 
         String ffmpegCommand = String.format(
                 "ffmpeg -i \"%s\" -c copy -map 0 -segment_time 00:00:05 -f segment \"%s/output%%03d.mp4\"",
@@ -36,7 +37,7 @@ public class VideoChunkingServiceImpl implements VideoChunkingService {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println(line); // Log FFmpeg output for debugging
+                System.out.println(line);
             }
         }
 
@@ -52,5 +53,13 @@ public class VideoChunkingServiceImpl implements VideoChunkingService {
         }
 
         return Arrays.asList(files);
+    }
+    private static String getResolutionFilter(String resolution) {
+        return switch (resolution.toLowerCase()) {
+            case "1080p" -> "scale=1920:1080";
+            case "720p" -> "scale=1280:720";
+            case "480p" -> "scale=854:480";
+            default -> "scale=1280:720";
+        };
     }
 }
