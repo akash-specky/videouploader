@@ -1,6 +1,5 @@
 package com.example.videouploader.repository;
 
-import com.example.videouploader.dtos.FilterParams;
 import com.example.videouploader.model.Video;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
@@ -17,8 +16,8 @@ public interface VideoRepository extends MongoRepository<Video, String> {
             "{ 'uploadTime': { $gte: ?3, $lte: ?4 } } " +
             "] }")
     List<Video> findVideosByFilter(
-            Integer durationFrom,
-            Integer durationTo,
+            String durationFrom,
+            String durationTo,
             String format,
             Date uploadTimeFrom,
             Date uploadTimeTo

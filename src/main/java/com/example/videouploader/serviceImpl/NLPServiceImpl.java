@@ -1,27 +1,30 @@
 package com.example.videouploader.serviceImpl;
 
 
-import com.example.videouploader.dtos.FilterParams;
+import com.example.videouploader.dtos.SearchDTO;
 import com.example.videouploader.service.NLPService;
+import opennlp.tools.tokenize.SimpleTokenizer;
 import org.springframework.stereotype.Service;
 
 @Service
 public class NLPServiceImpl implements NLPService {
     @Override
-    public FilterParams processQuery(String query) {
-        FilterParams filterParams = new FilterParams();
+    public SearchDTO processQuery(String query) {
+        SearchDTO searchDTO = new SearchDTO();
+        SimpleTokenizer tokenizer = SimpleTokenizer.INSTANCE;
 
-        if (query.contains("short") || query.contains("less than 5 minutes")) {
-            filterParams.setDuration("short");
-        }
-        if (query.contains("mp4")) {
-            filterParams.setFormat("mp4");
-        }
-        if (query.contains("today") || query.contains("this week")) {
-            filterParams.setUploadTime("today");
+        String[] tokens = tokenizer.tokenize(query);
+
+        for (String token : tokens) {
+            if (token.matches("\\d+min")) {
+                searchDTO.setDuration(token);
+            } else if (token.matches("MP4|AVI|MKV")) {
+                searchDTO.setFormat(token);
+            } else if (token.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                searchDTO.setUploadTime(token);
+            }
         }
 
-
-        return filterParams;
+        return searchDTO;
     }
 }

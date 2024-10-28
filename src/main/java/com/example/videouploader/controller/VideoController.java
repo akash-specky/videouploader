@@ -4,6 +4,7 @@ package com.example.videouploader.controller;
 import com.example.videouploader.Exception.VideoException;
 import com.example.videouploader.dtos.CommonResponseDTO;
 import com.example.videouploader.dtos.PaginationDTO;
+import com.example.videouploader.dtos.SearchDTO;
 import com.example.videouploader.exceptions.InvalidInputException;
 import com.example.videouploader.model.PaginatedResponse;
 import com.example.videouploader.model.Video;
@@ -86,26 +87,13 @@ public class VideoController {
 
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<CommonResponseDTO> searchVideos(
-            @RequestParam(required = false) String duration,
-            @RequestParam(required = false) String format,
-            @RequestParam(required = false) String uploadTime,
-            @RequestParam(required = false) String query
-    ) {
-        try {
+    @PostMapping("/search")
+    public ResponseEntity<CommonResponseDTO> searchVideos(@RequestBody SearchDTO searchDTO) {
 
-            List<Video> videos = videoService.searchVideos(duration, format, uploadTime, query);
 
-            if (videos.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new CommonResponseDTO(false,"No Video Found",null));
-            }
+            List<Video> videos = videoService.searchVideos(searchDTO);
             return ResponseEntity.ok(new CommonResponseDTO(true,"",videos));
 
-        } catch (InvalidInputException e) {
-            return ResponseEntity.badRequest().body(new CommonResponseDTO(false,"something went wrong",null));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CommonResponseDTO(false,"something went wrong",null));
-        }
+
     }
 }
