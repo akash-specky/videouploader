@@ -54,6 +54,27 @@
 			<artifactId>google-auth-library-oauth2-http</artifactId>
 			<version>1.28.0</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-core</artifactId>
+			<version>8.11.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-suggest</artifactId>
+			<version>8.11.0</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.github.wslf/LevenshteinDistance -->
+		<dependency>
+			<groupId>com.github.wslf</groupId>
+			<artifactId>LevenshteinDistance</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-text</artifactId>
+			<version>1.10.0</version>
+		</dependency>
 
 
 		<dependency>

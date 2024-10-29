@@ -8,11 +8,15 @@ import com.example.videouploader.service.NLPService;
 import com.example.videouploader.service.VideoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.apache.lucene.search.similarities.*;
+import org.apache.commons.text.similarity.LevenshteinDistance;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 
 @Service
@@ -37,7 +41,7 @@ public class VideoServiceImpl implements VideoService {
         SearchDTO processedSearch = nlpService.processQuery(searchDTO.getQuery());
 
         String duration = searchDTO.getDuration() != null ? searchDTO.getDuration() : processedSearch.getDuration();
-        String format = searchDTO.getFormat() != null ? searchDTO.getFormat() : processedSearch.getFormat();
+        String format = fuzzyMatchFormat(searchDTO.getFormat() != null ? searchDTO.getFormat() : processedSearch.getFormat());
         String uploadTime = searchDTO.getUploadTime() != null ? searchDTO.getUploadTime() : processedSearch.getUploadTime();
 
         String durationFrom = parseDurationFrom(duration);
@@ -47,6 +51,23 @@ public class VideoServiceImpl implements VideoService {
 
 
         return videoRepository.findVideosByFilter(durationFrom, durationTo, format, uploadTimeFrom, uploadTimeTo);
+    }
+
+    private String fuzzyMatchFormat(String format) {
+        LevenshteinDistance distanceCalculator = new LevenshteinDistance();
+        List<String> supportedFormats = Arrays.asList("MP4", "AVI", "MKV");
+
+        String bestMatch = format;
+        int lowestDistance = Integer.MAX_VALUE;
+
+        for (String supported : supportedFormats) {
+            int distance = distanceCalculator.apply(format.toUpperCase(Locale.ROOT), supported);
+            if (distance < lowestDistance) {
+                lowestDistance = distance;
+                bestMatch = supported;
+            }
+        }
+        return lowestDistance <= 2 ? bestMatch : null;
     }
     private String parseDurationFrom(String duration) {
         if (duration == null || duration.isEmpty()) {
