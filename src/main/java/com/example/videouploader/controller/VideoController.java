@@ -1,26 +1,29 @@
 package com.example.videouploader.controller;
 
 
-import com.example.videouploader.Exception.VideoException;
+import com.example.videouploader.Exception.CustomVideoException;
 import com.example.videouploader.dto.PaginationDTO;
+import com.example.videouploader.dtos.CommonResponseDTO;
 import com.example.videouploader.model.PaginatedResponse;
-import com.example.videouploader.model.VideoDetails;
-import com.example.videouploader.model.VideoProperties;
+import com.example.videouploader.model.VideoDetailsResponse;
 import com.example.videouploader.model.VideoUploadResponse;
 import com.example.videouploader.service.VideoProcessingService;
 import com.example.videouploader.serviceImpl.GoogleTokenValidator;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.tools.ant.taskdefs.rmic.XNewRmic;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.aggregation.ArrayOperators;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.InvalidPropertiesFormatException;
 import java.util.List;
 
+
 @RestController
+@Slf4j
 @RequestMapping("/videos")
 public class VideoController {
     @Autowired
@@ -60,23 +63,46 @@ public class VideoController {
 
 
     @GetMapping("/getVideo/{id}")
-    public ResponseEntity<VideoDetails> getVideo(@PathVariable Integer id) throws VideoException {
-
-        return new ResponseEntity<>(videoProcessingService.getVideoById(id), HttpStatus.OK);
+    public ResponseEntity<CommonResponseDTO> getVideo(@PathVariable Integer id) {
+        try {
+            VideoDetailsResponse videoDetailsResponse = videoProcessingService.getVideoById(id);
+            return new ResponseEntity<>(new CommonResponseDTO(true, "Successfull!", videoDetailsResponse), HttpStatus.OK);
+        } catch (CustomVideoException e) {
+            return new ResponseEntity<>(new CommonResponseDTO(false, e.getMessage(), new VideoDetailsResponse()), HttpStatus.BAD_REQUEST);
+        }
 
     }
 
     @GetMapping("/getAllVideos")
-    public ResponseEntity<List<VideoDetails>> getAllVideos() throws VideoException {
-
-        return new ResponseEntity<>(videoProcessingService.getAllVideos(), HttpStatus.OK);
-
-    }
-
-    @PostMapping("/getPagination")
-    public ResponseEntity<PaginatedResponse> getAllVideosWithPagination(@RequestBody PaginationDTO paginationDTO) throws VideoException {
-
-        return new ResponseEntity<>(videoProcessingService.getAllVideosWithPagination(paginationDTO), HttpStatus.OK);
+    public ResponseEntity<CommonResponseDTO> getAllVideos() {
+        try {
+            List<VideoDetailsResponse> videoDetailsResponse = videoProcessingService.getAllVideos();
+            return new ResponseEntity<>(new CommonResponseDTO(true, "Successfull!", videoDetailsResponse), HttpStatus.OK);
+        } catch (CustomVideoException e) {
+            return new ResponseEntity<>(new CommonResponseDTO(false, e.getMessage(), new VideoDetailsResponse()), HttpStatus.NOT_ACCEPTABLE);
+        }
 
     }
+
+    @PostMapping("/getAllVideosByPagination")
+    public ResponseEntity<CommonResponseDTO> getAllVideosWithPagination(@Valid @RequestBody PaginationDTO paginationDTO) {
+        try {
+            PaginatedResponse paginatedResponse = videoProcessingService.getAllVideosWithPagination(paginationDTO);
+            return new ResponseEntity<>(new CommonResponseDTO(true, "Successfull!", paginatedResponse), HttpStatus.OK);
+        } catch (CustomVideoException e) {
+            return new ResponseEntity<>(new CommonResponseDTO(false, e.getMessage(), new PaginatedResponse()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+
+    @PostMapping("/uploadThumbnail/{id}")
+    public ResponseEntity<CommonResponseDTO> uploadThumbnail(@RequestParam("file") MultipartFile file, @PathVariable Integer id) {
+        try {
+            String string = videoProcessingService.uploadThumbnail(file, id);
+            return new ResponseEntity<>(new CommonResponseDTO(true, "Successfull!", string), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new CommonResponseDTO(false, e.getMessage(), new Object()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
 }

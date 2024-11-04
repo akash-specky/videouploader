@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -21,8 +20,8 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(VideoException.class)
-    public ResponseEntity<MyErrorDetails> UsgerException(VideoException ue, WebRequest wr){
+    @ExceptionHandler(CustomVideoException.class)
+    public ResponseEntity<MyErrorDetails> UsgerException(CustomVideoException ue, WebRequest wr){
 
         MyErrorDetails error = new MyErrorDetails();
         error.setLocalDateTime(LocalDateTime.now());
