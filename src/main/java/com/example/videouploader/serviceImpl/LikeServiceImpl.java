@@ -1,5 +1,6 @@
 package com.example.videouploader.serviceImpl;
 
+import com.example.videouploader.dto.LikeDTO;
 import com.example.videouploader.model.Like;
 import com.example.videouploader.repository.LikeRepository;
 import com.example.videouploader.service.LikeService;
@@ -19,12 +20,12 @@ public class LikeServiceImpl implements LikeService {
 
 
     @Override
-    public String likeVideo(String userId, String videoId) {
-        Optional<Like> existingLike = likeRepository.findByUserIdAndVideoId(userId, videoId);
+    public String likeVideo(LikeDTO likeDTO) {
+        Optional<Like> existingLike = likeRepository.findByUserIdAndVideoId(likeDTO.getUserId(), likeDTO.getVideoId());
         if (existingLike.isEmpty()) {
             Like like = new Like();
-            like.setUserId(userId);
-            like.setVideoId(videoId);
+            like.setUserId(likeDTO.getUserId());
+            like.setVideoId(likeDTO.getVideoId());
             likeRepository.save(like);
             return "Liked successfully!";
         } else {

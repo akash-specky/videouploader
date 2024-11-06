@@ -1,6 +1,7 @@
 package com.example.videouploader.serviceImpl;
 
 import com.example.videouploader.Exception.VideoException;
+import com.example.videouploader.dto.LikeDTO;
 import com.example.videouploader.model.WatchList;
 import com.example.videouploader.repository.WatchListRepository;
 import com.example.videouploader.service.WatchListService;
@@ -16,13 +17,13 @@ public class WatchListServiceImpl implements WatchListService {
 
 
     @Override
-    public WatchList addToWatchList(String userId, String videoId) throws VideoException {
-        if (watchListRepository.existsByUserIdAndVideoId(userId, videoId)) {
+    public WatchList addToWatchList(LikeDTO dto) throws VideoException {
+        if (watchListRepository.existsByUserIdAndVideoId(dto.getUserId(), dto.getVideoId())) {
             throw new VideoException("Video is already in the watchlist for this user.");
         }
         WatchList watchList = new WatchList();
-        watchList.setUserId(userId);
-        watchList.setVideoId(videoId);
+        watchList.setUserId(dto.getUserId());
+        watchList.setVideoId(dto.getVideoId());
         return watchListRepository.save(watchList);
     }
 

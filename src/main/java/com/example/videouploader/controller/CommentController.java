@@ -1,5 +1,6 @@
 package com.example.videouploader.controller;
 
+import com.example.videouploader.dto.CommentDTO;
 import com.example.videouploader.model.Comment;
 import com.example.videouploader.service.CommentService;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,8 +20,8 @@ public class CommentController {
     private CommentService commentService;
 
     @PostMapping("/{videoId}/comments")
-    public ResponseEntity<Comment> addComment(@RequestParam String userId, @PathVariable String videoId, @RequestParam String content) {
-        Comment comment = commentService.addComment(userId, videoId, content);
+    public ResponseEntity<Comment> addComment(@RequestBody CommentDTO commentDTO) {
+        Comment comment = commentService.addComment(commentDTO);
         return ResponseEntity.ok(comment);
     }
 

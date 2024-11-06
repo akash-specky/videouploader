@@ -2,6 +2,7 @@ package com.example.videouploader.controller;
 
 
 import com.example.videouploader.Exception.VideoException;
+import com.example.videouploader.dto.LikeDTO;
 import com.example.videouploader.model.WatchList;
 import com.example.videouploader.service.WatchListService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +19,8 @@ public class WatchListController {
     private WatchListService watchListService;
 
     @PostMapping
-    public ResponseEntity<WatchList> addToWatchList(@RequestParam String userId, @RequestParam String videoId) throws VideoException {
-        WatchList watchList = watchListService.addToWatchList(userId, videoId);
+    public ResponseEntity<WatchList> addToWatchList(@RequestBody LikeDTO likeDTO) throws VideoException {
+        WatchList watchList = watchListService.addToWatchList(likeDTO);
         return ResponseEntity.ok(watchList);
     }
 

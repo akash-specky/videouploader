@@ -1,6 +1,7 @@
 package com.example.videouploader.serviceImpl;
 
 
+import com.example.videouploader.dto.CommentDTO;
 import com.example.videouploader.model.Comment;
 import com.example.videouploader.repository.CommentRepository;
 import com.example.videouploader.service.CommentService;
@@ -17,11 +18,11 @@ public class CommentServiceImpl implements CommentService {
 
 
     @Override
-    public Comment addComment(String userId, String videoId, String content) {
+    public Comment addComment(CommentDTO commentDTO) {
         Comment comment = new Comment();
-        comment.setUserId(userId);
-        comment.setVideoId(videoId);
-        comment.setContent(content);
+        comment.setUserId(comment.getUserId());
+        comment.setVideoId(commentDTO.getVideoId());
+        comment.setContent(commentDTO.getContent());
         return commentRepository.save(comment);
     }
 
