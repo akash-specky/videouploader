@@ -1,6 +1,7 @@
 package com.example.videouploader.model;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -40,6 +41,7 @@ public class User {
     private Date updatedAt;
     private String  given_name ;
     private boolean isAdmin ;
+    private String role;
 
 
 }
