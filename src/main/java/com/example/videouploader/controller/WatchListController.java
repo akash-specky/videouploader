@@ -1,7 +1,8 @@
 package com.example.videouploader.controller;
 
 
-import com.example.videouploader.Exception.VideoException;
+
+import com.example.videouploader.Exception.CustomVideoException;
 import com.example.videouploader.dto.LikeDTO;
 import com.example.videouploader.model.WatchList;
 import com.example.videouploader.service.WatchListService;
@@ -19,7 +20,7 @@ public class WatchListController {
     private WatchListService watchListService;
 
     @PostMapping
-    public ResponseEntity<WatchList> addToWatchList(@RequestBody LikeDTO likeDTO) throws VideoException {
+    public ResponseEntity<WatchList> addToWatchList(@RequestBody LikeDTO likeDTO) throws CustomVideoException {
         WatchList watchList = watchListService.addToWatchList(likeDTO);
         return ResponseEntity.ok(watchList);
     }
