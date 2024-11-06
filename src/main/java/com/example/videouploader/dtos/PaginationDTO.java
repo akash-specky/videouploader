@@ -1,4 +1,4 @@
-package com.example.videouploader.model;
+package com.example.videouploader.dtos;
 
 
 import lombok.AllArgsConstructor;
@@ -8,10 +8,10 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class VideoStatusResponse {
+public class PaginationDTO {
 
-    private String videoId;
-    private String status;
+    Integer pageNo;
+    Integer size;
 
 
 }

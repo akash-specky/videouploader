@@ -56,11 +56,6 @@ public class SecurityConfig {
         return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
     }
 
-//    @Bean
-//    public OpaqueTokenIntrospector opaqueTokenIntrospector() {
-//        return new SpringOpaqueTokenIntrospector(
-//                "http://localhost:8092/api/v1/users/login", googleClientId, googleClientSecret);
-//    }
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

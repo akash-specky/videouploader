@@ -36,6 +36,6 @@ public class PaginatedResponseBuilder {
     }
 
     public PaginatedResponse build() {
-        return new PaginatedResponse(this);
+        return new PaginatedResponse();
     }
 }

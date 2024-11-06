@@ -4,26 +4,24 @@ package com.example.videouploader.controller;
 import com.example.videouploader.Exception.CustomVideoException;
 import com.example.videouploader.dto.PaginationDTO;
 import com.example.videouploader.dtos.CommonResponseDTO;
-import com.example.videouploader.model.PaginatedResponse;
-import com.example.videouploader.model.VideoDetailsResponse;
-import com.example.videouploader.model.VideoUploadResponse;
+import com.example.videouploader.dtos.SearchDTO;
+import com.example.videouploader.exceptions.InvalidInputException;
+import com.example.videouploader.model.*;
 import com.example.videouploader.service.VideoProcessingService;
+import com.example.videouploader.service.VideoService;
 import com.example.videouploader.serviceImpl.GoogleTokenValidator;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.tools.ant.taskdefs.rmic.XNewRmic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-
 @RestController
-@Slf4j
 @RequestMapping("/videos")
 public class VideoController {
     @Autowired
@@ -31,6 +29,9 @@ public class VideoController {
 
     @Autowired
     private VideoProcessingService videoProcessingService;
+
+    @Autowired
+    private VideoService videoService;
 
 
     @PostMapping("/upload")
@@ -74,35 +75,26 @@ public class VideoController {
     }
 
     @GetMapping("/getAllVideos")
-    public ResponseEntity<CommonResponseDTO> getAllVideos() {
-        try {
-            List<VideoDetailsResponse> videoDetailsResponse = videoProcessingService.getAllVideos();
-            return new ResponseEntity<>(new CommonResponseDTO(true, "Successfull!", videoDetailsResponse), HttpStatus.OK);
-        } catch (CustomVideoException e) {
-            return new ResponseEntity<>(new CommonResponseDTO(false, e.getMessage(), new VideoDetailsResponse()), HttpStatus.NOT_ACCEPTABLE);
-        }
+    public ResponseEntity< List<VideoDetailsResponse>> getAllVideos() throws CustomVideoException {
+
+        return new ResponseEntity<>(videoProcessingService.getAllVideos(), HttpStatus.OK);
 
     }
 
-    @PostMapping("/getAllVideosByPagination")
-    public ResponseEntity<CommonResponseDTO> getAllVideosWithPagination(@Valid @RequestBody PaginationDTO paginationDTO) {
-        try {
-            PaginatedResponse paginatedResponse = videoProcessingService.getAllVideosWithPagination(paginationDTO);
-            return new ResponseEntity<>(new CommonResponseDTO(true, "Successfull!", paginatedResponse), HttpStatus.OK);
-        } catch (CustomVideoException e) {
-            return new ResponseEntity<>(new CommonResponseDTO(false, e.getMessage(), new PaginatedResponse()), HttpStatus.BAD_REQUEST);
-        }
+    @PostMapping("/getPagination")
+    public ResponseEntity<PaginatedResponse> getAllVideosWithPagination(@RequestBody PaginationDTO paginationDTO) throws CustomVideoException {
+
+        return new ResponseEntity<>(videoProcessingService.getAllVideosWithPagination(paginationDTO), HttpStatus.OK);
+
     }
 
+    @PostMapping("/search")
+    public ResponseEntity<CommonResponseDTO> searchVideos(@RequestBody SearchDTO searchDTO) {
 
-    @PostMapping("/uploadThumbnail/{id}")
-    public ResponseEntity<CommonResponseDTO> uploadThumbnail(@RequestParam("file") MultipartFile file, @PathVariable Integer id) {
-        try {
-            String string = videoProcessingService.uploadThumbnail(file, id);
-            return new ResponseEntity<>(new CommonResponseDTO(true, "Successfull!", string), HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new CommonResponseDTO(false, e.getMessage(), new Object()), HttpStatus.BAD_REQUEST);
-        }
+
+            List<Video> videos = videoService.searchVideos(searchDTO);
+            return ResponseEntity.ok(new CommonResponseDTO(true,"",videos));
+
+
     }
-
 }

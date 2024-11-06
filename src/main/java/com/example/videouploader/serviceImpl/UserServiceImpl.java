@@ -80,7 +80,11 @@ public class UserServiceImpl implements UserService {
 
         Optional<User> existingUser = userRepository.findByEmail(email);
         if (existingUser.isPresent()) {
-            return existingUser.get();
+            User exist = existingUser.get();
+            exist.setTokenValue(tokenValue);
+            exist.setUpdatedAt(new Date());
+            userRepository.save(exist);
+            return exist;
         }
 
 
