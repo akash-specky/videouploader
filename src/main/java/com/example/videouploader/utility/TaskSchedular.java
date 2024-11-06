@@ -17,7 +17,7 @@ public class TaskSchedular {
     VideoProcessingService videoProcessingService;
 
 
-    @Scheduled(fixedRate = 60000)
+//    @Scheduled(fixedRate = 60000)
      public void videorResolutionsConvertion() {
 
         try {
