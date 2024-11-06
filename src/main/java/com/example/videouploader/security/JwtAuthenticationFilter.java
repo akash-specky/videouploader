@@ -1,5 +1,8 @@
 package com.example.videouploader.security;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,6 +16,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,8 +25,12 @@ import java.util.stream.Collectors;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+
     @Autowired
     TokenValidator tokenValidator;
+
+    private static final Key key = Keys.hmacShaKeyFor(JwtUtil.SECRET_KEY.getBytes());
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -33,15 +42,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        final String token = authHeader.substring(7);  // Strip "Bearer " prefix
+         String token = authHeader.substring(7);
         if (tokenValidator.validateToken(token)) {
             String email = tokenValidator.extractEmail(token);
-//            List<String> roles = tokenValidator.extractRoles(token); // Assume tokenGenerator has a method to extract roles
-//            // Convert roles to GrantedAuthority objects
-//            List<GrantedAuthority> authorities = roles.stream()
-//                    .map(SimpleGrantedAuthority::new)
-//                    .collect(Collectors.toList());
-            var authToken = new JwtAuthToken(email, null);
+            String role = tokenValidator.extractRoles(token);
+            List<GrantedAuthority> authorities = new ArrayList<>();
+            authorities.add(new SimpleGrantedAuthority(role));
+            var authToken = new JwtAuthToken(email, authorities);
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authToken);
         }

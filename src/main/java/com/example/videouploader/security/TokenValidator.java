@@ -9,10 +9,10 @@ import java.security.Key;
 import java.util.List;
 
 
-//@Component
+@Component
 public class TokenValidator {
 
-    private static final Key key = Keys.hmacShaKeyFor(JwtUtil.SECRET_KEY.getBytes());
+    public static final Key key = Keys.hmacShaKeyFor(JwtUtil.SECRET_KEY.getBytes());
 
     public static boolean validateToken(String token) {
 
@@ -37,12 +37,15 @@ public class TokenValidator {
     }
 
 
-//    public List<String> extractRoles(String token) {
-//        Claims claims = Jwts.parserBuilder()
-//                .setSigningKey(key) // Replace with your secret key
-//                .build()
-//                .parseClaimsJws(token)
-//                .getBody();
-//        return claims.get("roles", List.class);
-//    }
+    public String extractRoles(String token) {
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key) // Replace with your secret key
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return String.valueOf(claims.get("role"));
+    }
 }

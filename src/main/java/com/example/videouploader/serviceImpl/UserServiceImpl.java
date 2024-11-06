@@ -1,5 +1,6 @@
 package com.example.videouploader.serviceImpl;
 
+import com.example.videouploader.enums.Role;
 import com.example.videouploader.exceptions.UserAlreadyExist;
 import com.example.videouploader.model.ForgotPasswordRequest;
 import com.example.videouploader.model.User;
@@ -45,7 +46,7 @@ public class UserServiceImpl implements UserService {
         } else {
             user.setPassword(null);
         }
-        user.setRole("user");
+        user.setRole(Role.USER);
 
         return userRepository.save(user);
     }
