@@ -198,20 +198,20 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
     public String processUploadedVideo(MultipartFile file, String resolution) throws Exception {
         File tempFile = null;
         try {
-            tempFile = saveFileToDirectory(file);
+//            tempFile = saveFileToDirectory(file);
             extractVideoProperties(file);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         String videoId = UUID.randomUUID().toString();
-        List<File> chunks = null;
-        try {
-            chunks = videoChunkingService.chunkVideo(tempFile, videoId, resolution);
-        } catch (java.lang.Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        processChunksAsync(chunks, videoId, file.getOriginalFilename(), tempFile);
+//        List<File> chunks = null;
+//        try {
+//            chunks = videoChunkingService.chunkVideo(tempFile, videoId, resolution);
+//        } catch (java.lang.Exception e) {
+//            throw new RuntimeException(e);
+//        }
+//
+//        processChunksAsync(chunks, videoId, file.getOriginalFilename(), tempFile);
 
         return videoId;
     }

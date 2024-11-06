@@ -2,6 +2,7 @@ package com.example.videouploader.controller;
 
 
 import com.example.videouploader.exceptions.UserAlreadyExist;
+import com.example.videouploader.model.ForgotPasswordRequest;
 import com.example.videouploader.model.User;
 import com.example.videouploader.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,11 @@ public class UserController {
     public User loginSuccess(@AuthenticationPrincipal OAuth2User principal) throws UserAlreadyExist {
 
         return userService.registerUser(principal);
+    }
+
+    @PostMapping("/forgotPassword")
+    public String forgotPassword(@RequestBody ForgotPasswordRequest fps) {
+        return userService.updatePassword(fps);
     }
 
 }

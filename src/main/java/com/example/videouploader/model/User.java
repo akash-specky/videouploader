@@ -1,6 +1,9 @@
 package com.example.videouploader.model;
 
 
+import com.example.videouploader.enums.Role;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.EnumNaming;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -39,6 +42,8 @@ public class User {
     private Date updatedAt;
     private String  given_name ;
     private boolean isAdmin ;
+    private Role role;
+
 
 
 }

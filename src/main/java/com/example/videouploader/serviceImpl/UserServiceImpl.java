@@ -1,10 +1,13 @@
 package com.example.videouploader.serviceImpl;
 
+import com.example.videouploader.enums.Role;
 import com.example.videouploader.exceptions.UserAlreadyExist;
+import com.example.videouploader.model.ForgotPasswordRequest;
 import com.example.videouploader.model.User;
 import com.example.videouploader.repo.UserRepository;
 import com.example.videouploader.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
@@ -13,6 +16,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import javax.swing.text.html.Option;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Optional;
 
@@ -40,10 +44,9 @@ public class UserServiceImpl implements UserService {
         if (user.getPassword() != null) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         } else {
-
             user.setPassword(null);
         }
-
+        user.setRole(Role.USER);
 
         return userRepository.save(user);
     }
@@ -109,6 +112,35 @@ public class UserServiceImpl implements UserService {
 
 
         return userRepository.save(user);
+    }
+
+    @Override
+    public String updatePassword(ForgotPasswordRequest fps) {
+
+        Optional<User> optionalUser = userRepository.findById(fps.getUserId());
+        if (optionalUser.isEmpty()){
+            throw new RuntimeException("Invalid user id");
+        }
+        if (!fps.getConfirmPassword().equals(fps.getNewPassword())) {
+            throw new RuntimeException("User new password and confirm password is not matched!");
+        }
+        if (!isValidPassword(fps.getNewPassword())) {
+            throw new RuntimeException("New password does not meet criteria");
+        }
+        User user = optionalUser.get();
+        user.setPassword(passwordEncoder.encode(fps.getNewPassword()));
+//        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+        return "done";
+    }
+
+
+    private boolean isValidPassword(String password) {
+        return password.length() >= 8 &&
+                password.matches(".*[A-Z].*") &&
+                password.matches(".*[a-z].*") &&
+                password.matches(".*\\d.*");
+        // Optional: Add a regex check for special characters if needed
     }
 
 }
