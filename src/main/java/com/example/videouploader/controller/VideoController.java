@@ -1,15 +1,12 @@
 package com.example.videouploader.controller;
 
 
-import com.example.videouploader.Exception.VideoException;
+import com.example.videouploader.Exception.CustomVideoException;
+import com.example.videouploader.dto.PaginationDTO;
 import com.example.videouploader.dtos.CommonResponseDTO;
-import com.example.videouploader.dtos.PaginationDTO;
 import com.example.videouploader.dtos.SearchDTO;
 import com.example.videouploader.exceptions.InvalidInputException;
-import com.example.videouploader.model.PaginatedResponse;
-import com.example.videouploader.model.Video;
-import com.example.videouploader.model.VideoDetails;
-import com.example.videouploader.model.VideoUploadResponse;
+import com.example.videouploader.model.*;
 import com.example.videouploader.service.VideoProcessingService;
 import com.example.videouploader.service.VideoService;
 import com.example.videouploader.serviceImpl.GoogleTokenValidator;
@@ -67,21 +64,25 @@ public class VideoController {
 
 
     @GetMapping("/getVideo/{id}")
-    public ResponseEntity<VideoDetails> getVideo(@PathVariable Integer id) throws VideoException {
-
-        return new ResponseEntity<>(videoProcessingService.getVideoById(id), HttpStatus.OK);
+    public ResponseEntity<CommonResponseDTO> getVideo(@PathVariable Integer id) {
+        try {
+            VideoDetailsResponse videoDetailsResponse = videoProcessingService.getVideoById(id);
+            return new ResponseEntity<>(new CommonResponseDTO(true, "Successfull!", videoDetailsResponse), HttpStatus.OK);
+        } catch (CustomVideoException e) {
+            return new ResponseEntity<>(new CommonResponseDTO(false, e.getMessage(), new VideoDetailsResponse()), HttpStatus.BAD_REQUEST);
+        }
 
     }
 
     @GetMapping("/getAllVideos")
-    public ResponseEntity<List<VideoDetails>> getAllVideos() throws VideoException {
+    public ResponseEntity< List<VideoDetailsResponse>> getAllVideos() throws CustomVideoException {
 
         return new ResponseEntity<>(videoProcessingService.getAllVideos(), HttpStatus.OK);
 
     }
 
     @PostMapping("/getPagination")
-    public ResponseEntity<PaginatedResponse> getAllVideosWithPagination(@RequestBody PaginationDTO paginationDTO) throws VideoException {
+    public ResponseEntity<PaginatedResponse> getAllVideosWithPagination(@RequestBody PaginationDTO paginationDTO) throws CustomVideoException {
 
         return new ResponseEntity<>(videoProcessingService.getAllVideosWithPagination(paginationDTO), HttpStatus.OK);
 

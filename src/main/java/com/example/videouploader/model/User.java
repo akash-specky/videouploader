@@ -27,21 +27,18 @@ public class User {
     @Indexed(unique = true)
     private String mobileNo;
 
+    private String address;
     private String tokenValue;
     private String country;
     private String pincode;
     private String password;
     private String  ssoId ;
     private String  pictureUrl ;
+    private String  family_name ;
+    private Date createdAt;
+    private Date updatedAt;
     private String  given_name ;
     private boolean isAdmin ;
-
-    private String  family_name ;
-
-    private Date createdAt;
-
-    private Date updatedAt;
-
 
 
 }

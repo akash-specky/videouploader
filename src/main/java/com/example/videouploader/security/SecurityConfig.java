@@ -31,10 +31,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        http.csrf().disable()
+        http.
+                csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable())
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
-                                .requestMatchers("/api/v1/users/login", "/v1/api/logout").permitAll()
+                                .requestMatchers(
+                                        "/api/v1/users/login", "/v1/api/logout",
+                                        "getVideo/**","/videos/upload","/videos/getAllVideos",
+                                        "/videos/getAllVideosByPagination","/videos/uploadThumbnail/**"
+                                )
+                                .permitAll()
                                 .anyRequest().authenticated()
 
                 )

@@ -3,6 +3,7 @@ package com.example.videouploader.utility;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
@@ -12,6 +13,7 @@ import java.util.concurrent.Executor;
 public class ExecutorConfig {
 
     @Bean
+    @Primary
     public Executor executorService() {
 
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -22,4 +24,5 @@ public class ExecutorConfig {
         executor.initialize();
         return executor;
     }
+
 }
