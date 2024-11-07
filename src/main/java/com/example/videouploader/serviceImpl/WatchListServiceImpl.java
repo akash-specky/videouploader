@@ -6,10 +6,11 @@ import com.example.videouploader.model.WatchList;
 import com.example.videouploader.repository.WatchListRepository;
 import com.example.videouploader.service.WatchListService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-
+@Service
 public class WatchListServiceImpl implements WatchListService {
 
     @Autowired

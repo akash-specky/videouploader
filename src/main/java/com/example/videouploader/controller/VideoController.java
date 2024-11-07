@@ -5,23 +5,26 @@ import com.example.videouploader.Exception.CustomVideoException;
 import com.example.videouploader.dto.PaginationDTO;
 import com.example.videouploader.dtos.CommonResponseDTO;
 import com.example.videouploader.dtos.SearchDTO;
-import com.example.videouploader.exceptions.InvalidInputException;
-import com.example.videouploader.model.*;
+import com.example.videouploader.model.PaginatedResponse;
+import com.example.videouploader.model.Video;
+import com.example.videouploader.model.VideoDetailsResponse;
+import com.example.videouploader.model.VideoUploadResponse;
 import com.example.videouploader.service.VideoProcessingService;
 import com.example.videouploader.service.VideoService;
 import com.example.videouploader.serviceImpl.GoogleTokenValidator;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+
 @RestController
+@Slf4j
 @RequestMapping("/videos")
 public class VideoController {
     @Autowired
@@ -51,7 +54,7 @@ public class VideoController {
                 return ResponseEntity.ok(new VideoUploadResponse(videoId, "Video uploaded successfully!"));
 
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body( new VideoUploadResponse(null,"Invalid token"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new VideoUploadResponse(null, "Invalid token"));
 
             }
 
@@ -97,4 +100,27 @@ public class VideoController {
 
 
     }
+    @PutMapping("/{id}/publish")
+    public ResponseEntity<String> publishVideo(@PathVariable Long id, @RequestParam boolean publish) {
+        videoProcessingService.updatePublishStatus(id, publish);
+        return ResponseEntity.ok(publish ? "Video published successfully." : "Video unpublished successfully.");
+    }
+
+
+    @PutMapping("/{id}/visibility")
+    public ResponseEntity<String> setVideoVisibility(@PathVariable Long id, @RequestParam boolean visible) {
+        videoProcessingService.updateVisibility(id, visible);
+        return ResponseEntity.ok(visible ? "Video is now visible to the public." : "Video is now hidden from the public.");
+    }
+
+    @PostMapping("/{videoId}/view")
+    public ResponseEntity<String> registerView(
+            @PathVariable Long videoId,
+            @RequestParam String ipAddress,
+            @RequestParam String deviceId) {
+
+        videoProcessingService.updateViewCount(videoId, ipAddress, deviceId);
+        return ResponseEntity.ok("View registered successfully");
+    }
+
 }

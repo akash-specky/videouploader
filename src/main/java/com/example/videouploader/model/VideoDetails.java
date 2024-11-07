@@ -34,7 +34,7 @@ public class VideoDetails {
 
     Map<Integer, String> videoResolutions = new HashMap<>();
 
-    Map<String, String> videoThumbnails =  new HashMap<>();
+    Map<String, String> videoThumbnails = new HashMap<>();
 
     @CreatedDate
     LocalDateTime createdAt;
@@ -43,6 +43,11 @@ public class VideoDetails {
     LocalDateTime updatedAt;
 
     VideoProperties videoProperties;
+
+    boolean published;
+    boolean visible;
+
+    Long viewCount;
 
 
     public VideoDetails(Integer id, String path, String fileName, long duration, Long size, String codec, String format, double fps, boolean isResolutiosAvailable, LocalDateTime createdAt, LocalDateTime updatedAt, VideoProperties videoProperties) {
@@ -55,7 +60,7 @@ public class VideoDetails {
         this.format = format;
         this.fps = fps;
         this.isResolutiosAvailable = isResolutiosAvailable;
-        this.createdAt =  createdAt;
+        this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.videoProperties = videoProperties;
     }

@@ -4,6 +4,7 @@ import com.example.videouploader.Exception.CustomVideoException;
 import com.example.videouploader.dto.PaginationDTO;
 import com.example.videouploader.model.*;
 import com.example.videouploader.repository.VideoDetailsRepository;
+import com.example.videouploader.repository.VideoViewRepository;
 import com.example.videouploader.service.VideoChunkingService;
 import com.example.videouploader.service.VideoCombiningService;
 import com.example.videouploader.service.VideoProcessingService;
@@ -11,30 +12,29 @@ import com.example.videouploader.utility.CustomSequences;
 import com.example.videouploader.utility.EntityToResponseConverter;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.io.FilenameUtils;
-import org.bytedeco.javacv.*;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.FFmpegFrameRecorder;
+import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber.Exception;
-
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.nio.file.Files;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -46,13 +46,15 @@ import static com.example.videouploader.utility.Constant.*;
 public class VideoProcessingServiceImpl implements VideoProcessingService {
 
 
-
     @Autowired
     CustomSequences sequences;
 
 
     @Autowired
     VideoDetailsRepository videoDetailsRepository;
+
+    @Autowired
+    VideoViewRepository videoViewRepository;
 
     @Autowired
     private Executor taskExecutor;
@@ -67,27 +69,61 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
     private static final Logger logger = LoggerFactory.getLogger(VideoProcessingServiceImpl.class);
 
 
-
-
     @Override
     public VideoDetailsResponse getVideoById(Integer id) throws CustomVideoException {
 
-            Optional<VideoDetails> optionalVideoDetails = videoDetailsRepository.findById(id);
-            if (optionalVideoDetails.isPresent()) {
-                VideoDetails videoDetails = optionalVideoDetails.get();
-                return EntityToResponseConverter.convertEntityToResponse(videoDetails);
-            }
-            throw new CustomVideoException("Invalid video details!");
+        Optional<VideoDetails> optionalVideoDetails = videoDetailsRepository.findById(id);
+        if (optionalVideoDetails.isPresent()) {
+            VideoDetails videoDetails = optionalVideoDetails.get();
+            return EntityToResponseConverter.convertEntityToResponse(videoDetails);
+        }
+        throw new CustomVideoException("Invalid video details!");
 
     }
 
+    @Override
+    public VideoDetailsResponse updateVideo(Integer id, VideoDetailsUpdateRequest updateRequest) throws CustomVideoException {
+        Optional<VideoDetails> optionalVideoDetails = videoDetailsRepository.findById(id);
+        if (optionalVideoDetails.isEmpty()) {
+            throw new CustomVideoException("Video with the specified ID not found!");
+        }
+
+        VideoDetails videoDetails = optionalVideoDetails.get();
+        if (updateRequest.getPath() != null) videoDetails.setPath(updateRequest.getPath());
+        if (updateRequest.getFileName() != null) videoDetails.setFileName(updateRequest.getFileName());
+        if (updateRequest.getDuration() != 0) videoDetails.setDuration(updateRequest.getDuration());
+        if (updateRequest.getSize() != null) videoDetails.setSize(updateRequest.getSize());
+        if (updateRequest.getCodec() != null) videoDetails.setCodec(updateRequest.getCodec());
+        if (updateRequest.getFormat() != null) videoDetails.setFormat(updateRequest.getFormat());
+        if (updateRequest.getFps() != 0) videoDetails.setFps(updateRequest.getFps());
+        if (updateRequest.getVideoResolutions() != null)
+            videoDetails.setVideoResolutions(updateRequest.getVideoResolutions());
+        if (updateRequest.getVideoThumbnails() != null)
+            videoDetails.setVideoThumbnails(updateRequest.getVideoThumbnails());
+        if (updateRequest.getVideoProperties() != null) {
+            VideoPropertiesUpdateRequest properties = updateRequest.getVideoProperties();
+            VideoProperties videoProperties = videoDetails.getVideoProperties();
+            if (videoProperties == null) {
+                videoProperties = new VideoProperties();
+                videoDetails.setVideoProperties(videoProperties);
+            }
+
+            if (properties.getFrameHeight() != null) videoProperties.setFrameHeight(properties.getFrameHeight());
+            if (properties.getFrameWidth() != null) videoProperties.setFrameWidth(properties.getFrameWidth());
+            if (properties.getFrameRate() != null) videoProperties.setFrameRate(properties.getFrameRate());
+            videoProperties.setModifiedDate(LocalDateTime.now());
+        }
+
+        videoDetails = videoDetailsRepository.save(videoDetails);
+        return EntityToResponseConverter.convertEntityToResponse(videoDetails);
+    }
 
 
     @Override
     public List<VideoDetailsResponse> getAllVideos() throws CustomVideoException {
 
         List<VideoDetails> videoDetailsList = videoDetailsRepository.findAll();
-        if (videoDetailsList.isEmpty()){
+        if (videoDetailsList.isEmpty()) {
             throw new CustomVideoException("No Videos is availible");
         }
         return EntityToResponseConverter.convertListOfEntityToResponse(videoDetailsList);
@@ -97,11 +133,11 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
     @Override
     public PaginatedResponse getAllVideosWithPagination(PaginationDTO paginationDTO) throws CustomVideoException {
 
-        Pageable pageable = PageRequest.of(paginationDTO.getPageNo()-1, paginationDTO.getSize());
+        Pageable pageable = PageRequest.of(paginationDTO.getPageNo() - 1, paginationDTO.getSize());
         Page<VideoDetails> videoPage = videoDetailsRepository.findAll(pageable);
 
-        if (videoPage.isEmpty()){
-            throw  new CustomVideoException("No videos found for the requested page.");
+        if (videoPage.isEmpty()) {
+            throw new CustomVideoException("No videos found for the requested page.");
         }
         List<VideoDetailsResponse> videoDetailsResponseList = EntityToResponseConverter.convertListOfEntityToResponse(videoPage.getContent());
 
@@ -114,8 +150,6 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
                 .build();
         return paginatedResponse;
     }
-
-
 
 
     @Override
@@ -133,7 +167,7 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
 
         String originalFileName = System.currentTimeMillis() + "_original." + extension;
         File outputDir = new File(THUMBNAIL_DIR);
-        if (!outputDir.exists()){
+        if (!outputDir.exists()) {
             outputDir.mkdirs();
         }
         File savedFile = new File(THUMBNAIL_DIR, originalFileName);
@@ -142,7 +176,7 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
             fos.write(file.getBytes());
 
             // Create and save thumbnails
-            String small =  createThumbnail(savedFile, SMALL_WIDTH, SMALL_HEIGHT, "small");
+            String small = createThumbnail(savedFile, SMALL_WIDTH, SMALL_HEIGHT, "small");
             String medium = createThumbnail(savedFile, MEDIUM_WIDTH, MEDIUM_HEIGHT, "medium");
             String large = createThumbnail(savedFile, LARGE_WIDTH, LARGE_HEIGHT, "large");
 
@@ -153,7 +187,7 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
             thumbnails.put("Large", large);
 
             Optional<VideoDetails> optionalVideoDetails = videoDetailsRepository.findById(videoId);
-            if (optionalVideoDetails.isEmpty()){
+            if (optionalVideoDetails.isEmpty()) {
                 throw new CustomVideoException("Invalid videoId!");
             }
             VideoDetails videoDetails = optionalVideoDetails.get();
@@ -169,16 +203,14 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
     }
 
 
-
-
     private String createThumbnail(File file, int width, int height, String size) throws IOException {
 
         String baseName = FilenameUtils.getBaseName(file.getName());
         String extension = FilenameUtils.getExtension(file.getName());
 
         try {
-            String fileName = baseName+"_" + size + "." + extension;
-            File outputFile = new File(THUMBNAIL_DIR +File.separator+ fileName);
+            String fileName = baseName + "_" + size + "." + extension;
+            File outputFile = new File(THUMBNAIL_DIR + File.separator + fileName);
 
             // Use the temp file for creating thumbnails
             Thumbnails.of(file)
@@ -190,8 +222,6 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
             throw new IOException(e.getMessage());
         }
     }
-
-
 
 
     @Override
@@ -217,7 +247,6 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
     }
 
 
-
     @Async
     public void processChunksAsync(List<File> chunks, String videoId, String fileName, File tempFile) {
         AtomicInteger processedChunks = new AtomicInteger(0);
@@ -230,7 +259,7 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
                                         throw new RuntimeException(e);
                                     }
                                 }, taskExecutor)
-                        .thenRun(() -> logProgress(processedChunks.incrementAndGet(), chunks.size(), videoId))
+                                .thenRun(() -> logProgress(processedChunks.incrementAndGet(), chunks.size(), videoId))
                 )
                 .toArray(CompletableFuture[]::new);
 
@@ -264,7 +293,7 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
         try {
             logger.info("Processing chunk: {} for video ID: {}", chunk.getName(), videoId);
 
-            System.out.println("Processing chunk: " + chunk.getName()+"  "+videoId);
+            System.out.println("Processing chunk: " + chunk.getName() + "  " + videoId);
         } catch (Throwable e) {
             System.err.println("Error processing chunk: " + chunk.getName());
             e.printStackTrace();
@@ -277,7 +306,6 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
         int progressPercentage = (int) ((completedChunks / (float) totalChunks) * 100);
         logger.info("Progress: {}% done for video ID: {}", progressPercentage, videoId);
     }
-
 
 
     private File saveFileToDirectory(MultipartFile file) throws IOException {
@@ -323,7 +351,7 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
             grabber.start();
 
             long duration = grabber.getLengthInTime();
-            duration = duration/1000000;                //convert into second
+            duration = duration / 1000000;                //convert into second
             int frameWidth = grabber.getImageWidth();
             int frameHeight = grabber.getImageHeight();
             String codec = grabber.getVideoCodecName();
@@ -349,7 +377,7 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
             }
 
             VideoProperties videoProperties = new VideoProperties(sequences.getNextSequence("videoProperties"), frameWidth, frameHeight, frameRate, createdDate, modifiedDate);
-            VideoDetails videoDetails = new VideoDetails(sequences.getNextSequence("videoDetails"), UPLOAD_DIR, fileNme, duration,multipartFile.getSize(), codec,format, fps, false, LocalDateTime.now(), LocalDateTime.now(), videoProperties);
+            VideoDetails videoDetails = new VideoDetails(sequences.getNextSequence("videoDetails"), UPLOAD_DIR, fileNme, duration, multipartFile.getSize(), codec, format, fps, false, LocalDateTime.now(), LocalDateTime.now(), videoProperties);
             videoDetailsRepository.save(videoDetails);
 
             // Clean up
@@ -357,7 +385,7 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
             videoFile.delete();
 
         } catch (Exception e) {
-           throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
 
     }
@@ -403,8 +431,6 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
     }
 
 
-
-
     @Async
     @Override
     public String processUnconvertedVideos() throws IOException {
@@ -415,11 +441,11 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
 
         List<VideoDetails> videoDetailsList = videoDetailsRepository.findAll();
 
-        for (VideoDetails videoDetails:videoDetailsList){
-            if (!videoDetails.isResolutiosAvailable()){
-                if (videoDetails.getFileName()!=null){
+        for (VideoDetails videoDetails : videoDetailsList) {
+            if (!videoDetails.isResolutiosAvailable()) {
+                if (videoDetails.getFileName() != null) {
                     File videoFile = new File(VIDEO_DIR, videoDetails.getFileName());
-                    Map<Integer, String> videoResolutios =  processVideo(videoFile);
+                    Map<Integer, String> videoResolutios = processVideo(videoFile);
                     videoDetails.setResolutiosAvailable(true);
                     videoDetails.setVideoResolutions(videoResolutios);
                     videoDetailsRepository.save(videoDetails);
@@ -431,7 +457,7 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
 
     private Map<Integer, String> processVideo(File video) throws IOException {
 
-        File outputFolder = new File(OUTPUT_VIDEO_DIR );
+        File outputFolder = new File(OUTPUT_VIDEO_DIR);
         if (!outputFolder.exists()) {
             outputFolder.mkdirs();
         }
@@ -444,11 +470,11 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
 
         Map<Integer, String> videosMap = new HashMap<>();
 
-        for (int i=0; i<5; i++) {
-            if (pixcel!=heights[i]) {
-                String videoName = System.currentTimeMillis()+"_"+heights[i]+".mp4";
-                convertVideo(video, OUTPUT_VIDEO_DIR+"/"+videoName , widths[i], heights[i]);
-                videosMap.put(heights[i],videoName);
+        for (int i = 0; i < 5; i++) {
+            if (pixcel != heights[i]) {
+                String videoName = System.currentTimeMillis() + "_" + heights[i] + ".mp4";
+                convertVideo(video, OUTPUT_VIDEO_DIR + "/" + videoName, widths[i], heights[i]);
+                videosMap.put(heights[i], videoName);
             }
         }
 
@@ -456,13 +482,41 @@ public class VideoProcessingServiceImpl implements VideoProcessingService {
     }
 
 
-
-
     public static int getVideoPixcel(File videoFile) throws FFmpegFrameGrabber.Exception {
 
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(videoFile);
         grabber.start();
         return grabber.getImageHeight();
+    }
+
+    public void updatePublishStatus(Long id, boolean publish) {
+        VideoDetails videoDetails = videoDetailsRepository.findById(id);
+        videoDetails.setPublished(publish);
+        videoDetailsRepository.save(videoDetails);
+    }
+
+    public void updateVisibility(Long id, boolean visible) {
+        VideoDetails videoDetails = videoDetailsRepository.findById(id);
+        videoDetails.setVisible(visible);
+        videoDetailsRepository.save(videoDetails);
+    }
+
+    public void updateViewCount(Long videoId, String ipAddress, String deviceId) {
+        VideoDetails video = videoDetailsRepository.findById(videoId);
+
+        boolean viewExists = videoViewRepository.findByVideoIdAndIpAddressAndDeviceId(videoId, ipAddress, deviceId)
+                .isPresent();
+
+        if (!viewExists) {
+            VideoView newView = new VideoView();
+            newView.setVideoId(videoId);
+            newView.setIpAddress(ipAddress);
+            newView.setDeviceId(deviceId);
+            newView.setViewTime(LocalDateTime.now());
+            videoViewRepository.save(newView);
+            video.setViewCount(video.getViewCount() + 1);
+            videoDetailsRepository.save(video);
+        }
     }
 
 }

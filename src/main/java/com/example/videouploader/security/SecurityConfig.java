@@ -1,20 +1,14 @@
 package com.example.videouploader.security;
 
 import com.example.videouploader.serviceImpl.GoogleTokenValidator;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import static com.example.videouploader.utility.Constant.urls;
 
 @Configuration
 public class SecurityConfig {
@@ -38,7 +32,9 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/api/v1/users/login", "/v1/api/logout",
                                         "getVideo/**","/videos/upload","/videos/getAllVideos",
-                                        "/videos/getAllVideosByPagination","/videos/uploadThumbnail/**"
+                                        "/videos/getAllVideosByPagination","/videos/uploadThumbnail/**",
+                                        "/admin/user","admin/users/search","/adminVideo/getAllVideos","/adminVideo/getVideo/{id}","/adminVideo/updateVideo/{id}","/adminVideo/deleteVideo/{id}",
+                                        "/adminVideo/videos/count","/filter/advanceFilter"
                                 )
                                 .permitAll()
                                 .anyRequest().authenticated()
