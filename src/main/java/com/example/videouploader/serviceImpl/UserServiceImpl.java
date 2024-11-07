@@ -5,16 +5,18 @@ import com.example.videouploader.model.User;
 import com.example.videouploader.repo.UserRepository;
 import com.example.videouploader.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.html.Option;
+import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -109,6 +111,26 @@ public class UserServiceImpl implements UserService {
 
 
         return userRepository.save(user);
+    }
+
+    public void updateUserStatus(Long userId, boolean isActive) {
+        User user = userRepository.findByUserId(userId);
+        user.setLastActiveAt(isActive ? LocalDateTime.now() : null);
+        userRepository.save(user);
+    }
+
+
+    @Scheduled(fixedRate = 60000)
+    public void checkUserActivityStatus() {
+        LocalDateTime oneMinuteAgo = LocalDateTime.now().minusMinutes(1);
+        List<User> inactiveUsers = userRepository.findAll().stream()
+                .filter(user -> user.getLastActiveAt() == null || user.getLastActiveAt().isBefore(oneMinuteAgo))
+                .collect(Collectors.toList());
+
+        inactiveUsers.forEach(user -> {
+            user.setLastActiveAt(null);
+            userRepository.save(user);
+        });
     }
 
 }

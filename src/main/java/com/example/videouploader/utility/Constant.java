@@ -1,17 +1,13 @@
 package com.example.videouploader.utility;
 
-import java.io.File;
-import java.nio.file.Paths;
-import java.util.List;
-
 public class Constant {
 
-    public static final String UPLOAD_DIR = "c://Users/gaurav.singh/Desktop/videoUploaderTask/videouploader/UploadedVideo";
-    public static final String THUMBNAIL_DIR =  "c://Users/gaurav.singh/Desktop/videoUploaderTask/videouploader/Thumbnail";
-    public static final String OUTPUT_VIDEO_DIR =  "c://Users/gaurav.singh/Desktop/videoUploaderTask/videouploader/VideosResulition";
+    public static final String UPLOAD_DIR = "c://Users/amaan.syed/Documents/videouploader_project/videouploader/UploadedVideo";
+    public static final String THUMBNAIL_DIR =  "c://Users/amaan.syed/Documents/videouploader_project/videouploader/Thumbnail";
+    public static final String OUTPUT_VIDEO_DIR =  "c://Users/amaan.syed/Documents/videouploader_project/videouploader/VideosResulition";
     public static final String VIDEO_DIR = "c://Users/gaurav.singh/Pictures/videos";
-    public static final String CHUNK_DIR = "c://Users/gaurav.singh/Desktop/videoUploaderTask/videouploader/chunks";
-    public static final String COMBINED_VIDEO_DIR = "c://Users/gaurav.singh/Desktop/videoUploaderTask/videouploader/combined";
+    public static final String CHUNK_DIR = "c://Users/amaan.syed/Documents/videouploader_project/videouploader/chunks";
+    public static final String COMBINED_VIDEO_DIR = "c://Users/amaan.syed/Documents/videouploader_project/videouploader/combined";
 
     public static String[] urls = {"/users/signup"};
 

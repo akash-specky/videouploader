@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 @Service
 public interface UserService {
 
-    public User registerUser(User user) throws Exception ;
+    public User registerUser(User user) throws Exception;
+
     public User registerUser(OAuth2User principal) throws UserAlreadyExist;
 
+    void updateUserStatus(Long userId, boolean isActive);
 }
